@@ -375,6 +375,7 @@
   }
   .global-keyboard.open{ transform:translateY(0); pointer-events:auto; }
   .gkb-row{ display:flex; gap:6px; justify-content:center; padding:0 3px; }
+  .gkb-row.row-mid{ padding:0 18px; }
   .gkb-key{
     flex:1; max-width:34px; height:42px; background:#4a4a4c; border-radius:6px;
     display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;
@@ -383,8 +384,8 @@
   .gkb-key:active{ background:#6a6a6c; }
   .gkb-key.wide{ max-width:none; flex:1.6; font-size:13px; background:#3a3a3c; }
   .gkb-key.space{ max-width:none; flex:5; }
-  .gkb-key.shift, .gkb-key.back{ max-width:44px; flex:1.3; background:#3a3a3c; }
-  .gkb-key.shift.active{ background:#6a6a6c; color:var(--ios-blue); }
+  .gkb-key.shift, .gkb-key.back{ max-width:40px; flex:1.5; background:#3a3a3c; font-size:16px; }
+  .gkb-key.shift.active{ background:#e8e8e8; color:#000; }
   .gkb-row.bottom-row{ align-items:center; }
   .gkb-key.narrow{ max-width:26px; }
 
@@ -1340,6 +1341,30 @@ function isTypableField(el){
   return false;
 }
 
+function blockNativeKeyboard(el){
+  // Prevents the real device's own on-screen keyboard from appearing, so only
+  // our custom global keyboard handles input. inputmode="none" is the standard
+  // way browsers respect this; readonly is a stronger fallback for mobile Safari,
+  // which doesn't always honor inputmode="none" on its own.
+  if(!el || el.dataset.kbBlocked) return;
+  el.dataset.kbBlocked = '1';
+  el.setAttribute('inputmode', 'none');
+  el.setAttribute('autocomplete', 'off');
+  el.setAttribute('autocorrect', 'off');
+  el.setAttribute('autocapitalize', 'off');
+  el.setAttribute('spellcheck', 'false');
+  el.setAttribute('readonly', 'readonly');
+  el.addEventListener('mousedown', function(){ el.removeAttribute('readonly'); });
+  el.addEventListener('touchstart', function(){ el.removeAttribute('readonly'); }, {passive:true});
+}
+
+function applyKeyboardBlockToAllFields(){
+  document.querySelectorAll('input, textarea').forEach(el=>{
+    if(isTypableField(el)) blockNativeKeyboard(el);
+  });
+}
+applyKeyboardBlockToAllFields();
+
 function showGlobalKeyboard(el){
   kbActiveEl = el;
   kbLayer = 'letters';
@@ -1402,10 +1427,11 @@ function kbBackspace(){
 function kbEnter(){
   const el = kbActiveEl;
   if(!el) return;
+  el.focus();
   if(el.tagName === 'TEXTAREA'){
     kbInsertText('\n');
   } else {
-    el.dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', bubbles:true}));
+    el.dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', code:'Enter', keyCode:13, which:13, bubbles:true, cancelable:true}));
     el.blur();
   }
 }
@@ -1420,9 +1446,9 @@ function renderGlobalKeyboard(){
   kb.innerHTML = '';
 
   if(kbLayer === 'letters'){
-    KB_LETTERS.forEach(chars=>{
+    KB_LETTERS.forEach((chars, rowIdx)=>{
       const rowEl = document.createElement('div');
-      rowEl.className = 'gkb-row';
+      rowEl.className = 'gkb-row' + (rowIdx === 1 ? ' row-mid' : '');
       chars.forEach(c=>{
         const ch = kbShift ? c.toUpperCase() : c;
         const key = document.createElement('div');
@@ -1438,7 +1464,7 @@ function renderGlobalKeyboard(){
     lastRow.className = 'gkb-row bottom-row';
     const shift = document.createElement('div');
     shift.className = 'gkb-key shift' + (kbShift ? ' active' : '');
-    shift.innerHTML = '<ion-icon name="arrow-up-outline"></ion-icon>';
+    shift.innerHTML = '<ion-icon name="arrow-up"></ion-icon>';
     shift.addEventListener('mousedown', kbKeyMouseDown);
     shift.addEventListener('click', ()=>{ kbShift = !kbShift; renderGlobalKeyboard(); });
     lastRow.appendChild(shift);
@@ -1815,6 +1841,11 @@ function openApp(id){
   document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   currentApp = id;
+  // If the previously focused field isn't inside the screen we're switching to, drop focus so the keyboard hides
+  const active = document.activeElement;
+  if(active && isTypableField(active) && !document.getElementById(id).contains(active)){
+    active.blur();
+  }
   if(id==='weather' && !window.__wxLoaded){ loadWeather(); }
   if(id==='music' && !window.__musicRendered){ renderPlaylist(); }
   if(id==='wallpaper-settings' && typeof wpSyncPreview === 'function'){ wpSyncPreview(); }
@@ -2279,6 +2310,7 @@ function closeNoteEditor(){
   if(n && !n.body.trim()) notes = notes.filter(x=>x.id!==currentNoteId);
   renderNotesList();
   pSave('notes', notes);
+  document.getElementById('note-textarea').blur();
   openApp('notes');
 }
 function deleteCurrentNote(){
@@ -2555,6 +2587,7 @@ function calRenderEvents(){
   }
   html += `<div class="cal-add-row"><input id="cal-new-title" placeholder="Event title"><input id="cal-new-time" placeholder="Time" style="max-width:90px;"><button onclick="calAddEvent()">Add</button></div>`;
   document.getElementById('cal-events').innerHTML = html;
+  if(typeof applyKeyboardBlockToAllFields === 'function') applyKeyboardBlockToAllFields();
 }
 function calAddEvent(){
   const title = document.getElementById('cal-new-title').value.trim();
