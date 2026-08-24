@@ -63,11 +63,72 @@
     overflow:hidden;
     color:#fff;
   }
-  .dynamic-island{
+  .di-wrap{
     position:absolute; top:14px; left:50%; transform:translateX(-50%);
-    width:126px; height:37px; background:#000; border-radius:20px; z-index:9900;
-    box-shadow:0 0 0 1px rgba(255,255,255,0.04);
+    z-index:9900; display:flex; align-items:center; gap:8px;
+    transition:top .38s cubic-bezier(.32,.9,0,1.1);
   }
+  .dynamic-island{
+    width:126px; height:37px; background:#000; border-radius:20px;
+    box-shadow:0 0 0 1px rgba(255,255,255,0.04);
+    overflow:hidden; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:width .38s cubic-bezier(.32,.9,0,1.1), height .38s cubic-bezier(.32,.9,0,1.1), border-radius .38s cubic-bezier(.32,.9,0,1.1), top .38s cubic-bezier(.32,.9,0,1.1);
+  }
+  @keyframes di-spin{
+    0%{ transform:rotate(0deg) scale(1); }
+    35%{ transform:rotate(200deg) scale(0.82); }
+    70%{ transform:rotate(380deg) scale(1.05); }
+    100%{ transform:rotate(360deg) scale(1); }
+  }
+  .dynamic-island.spinning, .di-satellite.spinning{
+    animation:di-spin .55s cubic-bezier(.32,.9,0,1.1);
+  }
+  .dynamic-island.compact{
+    width:190px;
+  }
+  .dynamic-island.expanded{
+    width:340px; height:90px; border-radius:32px;
+  }
+  .di-wrap.has-expanded{ top:12px; }
+  .di-content{ display:flex; align-items:center; width:100%; height:100%; padding:0 12px; gap:8px; color:#fff; }
+  .dynamic-island:not(.compact):not(.expanded) .di-content{ display:none; }
+  .di-icon{ width:22px; height:22px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#333; }
+  .di-satellite{
+    width:37px; height:37px; background:#000; border-radius:50%; flex-shrink:0;
+    box-shadow:0 0 0 1px rgba(255,255,255,0.04);
+    display:none; align-items:center; justify-content:center; color:#fff; cursor:pointer;
+    position:relative; overflow:hidden;
+  }
+  .di-satellite.visible{ display:flex; }
+  .di-satellite ion-icon{ font-size:15px; }
+  .di-satellite-ring{
+    position:absolute; inset:2px; border-radius:50%;
+    background:conic-gradient(#ff9f0a var(--di-sat-pct, 0%), rgba(255,255,255,0.15) 0);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+    mask:radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+  }
+  .di-icon ion-icon{ font-size:13px; }
+  .di-compact-body{ flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .di-compact-text{ font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .di-eq{ display:flex; align-items:flex-end; gap:2px; height:14px; }
+  .di-eq span{ width:2.5px; background:var(--ios-green); border-radius:1px; animation:di-eq-bounce 0.9s ease-in-out infinite; }
+  .di-eq span:nth-child(1){ height:40%; animation-delay:0s; }
+  .di-eq span:nth-child(2){ height:100%; animation-delay:.15s; }
+  .di-eq span:nth-child(3){ height:65%; animation-delay:.3s; }
+  @keyframes di-eq-bounce{ 0%,100%{ transform:scaleY(0.4); } 50%{ transform:scaleY(1); } }
+  .dynamic-island:not(.compact) .di-eq{ display:none; }
+
+  .di-expanded-body{ display:none; flex:1; flex-direction:column; gap:6px; min-width:0; }
+  .dynamic-island.expanded .di-expanded-body{ display:flex; }
+  .dynamic-island.expanded .di-compact-body{ display:none; }
+  .di-expanded-top{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .di-expanded-title{ font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .di-expanded-sub{ font-size:11px; color:#8e8e93; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .di-expanded-controls{ display:flex; align-items:center; gap:14px; }
+  .di-expanded-controls ion-icon{ font-size:18px; color:#fff; cursor:pointer; }
+  .di-expanded-progress{ height:3px; background:rgba(255,255,255,0.2); border-radius:2px; overflow:hidden; margin-top:2px; }
+  .di-expanded-progress-fill{ height:100%; background:#fff; border-radius:2px; }
 
   /* ---------- Status bar ---------- */
   .statusbar{
@@ -107,7 +168,7 @@
   .search-status-row{
     display:flex; justify-content:space-between; padding:14px 24px 0; color:#fff; font-size:15px; font-weight:600;
   }
-  .search-suggestions-scroll{ flex:1; overflow-y:auto; padding:14px 16px 10px; }
+  .search-suggestions-scroll{ flex:1; overflow-y:auto; padding:14px 16px 90px; }
   .search-siri-title{ color:#fff; font-size:20px; font-weight:700; margin:6px 4px 10px; display:flex; justify-content:space-between; align-items:center;}
   .search-siri-title span.show-more{ font-size:14px; font-weight:500; color:#c9a6ff; }
   .siri-suggest-row{
@@ -141,11 +202,14 @@
   .search-result-chev{ color:rgba(235,235,245,0.3); font-size:16px; }
 
   .search-bar-dock{
-    position:relative; z-index:2; background:#000;
-    padding:8px 12px calc(env(safe-area-inset-bottom, 0px) + 6px);
+    position:absolute; left:0; right:0; bottom:0; z-index:2;
+    background:#1c1c1e; border-top:1px solid rgba(255,255,255,0.08);
+    padding:8px 16px calc(env(safe-area-inset-bottom, 0px) + 6px);
+    transition:bottom .28s cubic-bezier(.32,.72,0,1);
   }
+  .search-bar-dock.kb-open{ bottom:206px; }
   .search-bar-row{
-    display:flex; align-items:center; gap:8px; padding:2px 4px 10px;
+    display:flex; align-items:center; gap:8px;
   }
   .search-input-wrap{
     flex:1; display:flex; align-items:center; gap:8px; background:rgba(120,120,128,0.32);
@@ -325,12 +389,37 @@
     filter: blur(0px);
     transition: filter .15s;
   }
+  .home-widgets-row{
+    display:flex; gap:12px; padding-top:20px;
+  }
+  .home-widget{
+    flex:1; aspect-ratio:1; border-radius:22px; overflow:hidden; position:relative; cursor:pointer;
+    background:#3a3a3c;
+    padding:12px; display:flex; flex-direction:column; color:#fff;
+    box-shadow:0 4px 14px rgba(0,0,0,0.25);
+    transition:background .3s ease;
+  }
+  #hw-calendar{ background:#1c1c1e; }
+  #hw-weather.wx-clear{ background:linear-gradient(160deg, #4aa8ff, #1f6fe0); }
+  #hw-weather.wx-cloudy{ background:linear-gradient(160deg, #7a828c, #565d66); }
+  .hw-title-row{ display:flex; justify-content:space-between; align-items:flex-start; }
+  .hw-title{ font-size:12px; font-weight:600; color:rgba(255,255,255,0.75); }
+  .hw-icon{ font-size:15px; }
+  .hw-weather-temp{ font-size:34px; font-weight:300; margin-top:auto; line-height:1; }
+  .hw-weather-desc{ font-size:12px; color:rgba(255,255,255,0.7); margin-top:2px; }
+  .hw-weather-hilo{ font-size:11px; color:rgba(255,255,255,0.55); margin-top:1px; }
+  .hw-cal-date{ font-size:30px; font-weight:600; line-height:1; margin-top:2px; }
+  .hw-cal-weekday{ font-size:11px; color:#ff453a; font-weight:700; text-transform:uppercase; }
+  .hw-cal-events{ margin-top:auto; display:flex; flex-direction:column; gap:3px; }
+  .hw-cal-event-row{ font-size:11px; color:rgba(255,255,255,0.8); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; gap:5px; align-items:center; }
+  .hw-cal-event-dot{ width:5px; height:5px; border-radius:50%; background:var(--ios-blue); flex-shrink:0; }
+  .hw-cal-empty{ font-size:11px; color:rgba(255,255,255,0.4); margin-top:auto; }
   .app-grid{
     display:grid;
     grid-template-columns:repeat(4, 60px);
     justify-content:space-between;
-    gap:20px 0;
-    padding-top:48px;
+    gap:16px 0;
+    padding-top:14px;
   }
   .app-icon-wrap{display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; width:60px;}
   .app-icon-wrap.empty-slot{cursor:default; height:60px;}
@@ -345,7 +434,7 @@
   .app-icon-wrap span.label{color:#fff; font-size:11px; font-weight:500; text-shadow:0 1px 2px rgba(0,0,0,0.3);}
   .app-icon.calc{background-color:#1c1c1e; background-image:url('https://static.wikia.nocookie.net/logopedia/images/6/6c/Apple_Calculator_2025.png/revision/latest/scale-to-width-down/48?cb=20251104215141');}
   .app-icon.notes{background-color:#ffb300; background-image:url('https://static.wikia.nocookie.net/logopedia/images/a/ac/Apple_Notes_2025.png/revision/latest/scale-to-width-down/48?cb=20251104221149');}
-  .app-icon.clock{background-color:#1c1c1e; background-image:url('images/app-icon/clock.png');}
+  .app-icon.clock{background-color:#1c1c1e; overflow:hidden;}
   .app-icon.weather{background-color:#1f6fe0; background-image:url('https://static.wikia.nocookie.net/logopedia/images/3/38/Apple_Weather_2025.png/revision/latest/scale-to-width-down/48?cb=20251104225359');}
   .app-icon.calendar{background-color:#fff;}
   .app-icon.music{background-color:#fa2d48; background-image:url('https://static.wikia.nocookie.net/logopedia/images/8/8b/Apple_Music_liquid_glass.png/revision/latest/scale-to-width-down/48?cb=20260625151153');}
@@ -354,6 +443,7 @@
   .app-icon.blink{background-color:#5e5ce6; background-image:url('images/app-icon/blink.png');}
   .app-icon.photos{background-color:#fff; background-image:url('https://static.wikia.nocookie.net/logopedia/images/8/83/Apple_Photos_2025_III.png/revision/latest/scale-to-width-down/48?cb=20251104204247');}
   .app-icon.reminders{background-color:#fff;}
+  .app-icon.camera{background-color:#1c1c1e; background-image:url('https://static.wikia.nocookie.net/logopedia/images/d/df/Camera_%28iOS%29_2025.png/revision/latest/scale-to-width-down/48?cb=20251104203428');}
 
   .dock{
     margin:0 0 10px; margin-top:auto;
@@ -568,6 +658,42 @@
     font-size:24px; color:#fff;
   }
   .photo-viewer-img{ position:relative; z-index:1; max-width:100%; max-height:100%; object-fit:contain; }
+  /* ================= CAMERA ================= */
+  #camera{background:#000; position:relative;}
+  .camera-viewport{position:absolute; inset:0; overflow:hidden; background:#000;}
+  .camera-viewport video{width:100%; height:100%; object-fit:cover;}
+  .camera-flash-overlay{position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none;}
+  .camera-flash-overlay.flashing{ animation:camera-flash .35s ease; }
+  @keyframes camera-flash{ 0%{opacity:0;} 15%{opacity:1;} 100%{opacity:0;} }
+  .camera-permission-msg{
+    position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    color:#fff; font-size:14px; text-align:center; padding:0 40px; background:#000;
+  }
+  .camera-permission-msg.visible{ display:flex; }
+  .camera-retry-btn{ background:#0a84ff; color:#fff; padding:8px 18px; border-radius:10px; font-size:14px; cursor:pointer; margin-top:6px; }
+  .camera-top-bar{
+    position:absolute; top:54px; left:20px; right:20px; z-index:5; display:flex; justify-content:space-between;
+    font-size:24px; color:#fff;
+  }
+  .camera-top-bar ion-icon{ cursor:pointer; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5)); }
+  .camera-bottom-bar{
+    position:absolute; bottom:38px; left:0; right:0; z-index:5; display:flex; align-items:center; justify-content:space-between;
+    padding:0 34px;
+  }
+  .camera-last-thumb{
+    width:48px; height:48px; border-radius:10px; background-size:cover; background-position:center;
+    background-color:#2c2c2e; border:2px solid rgba(255,255,255,0.5); cursor:pointer;
+  }
+  .camera-shutter-btn{
+    width:72px; height:72px; border-radius:50%; background:#fff; padding:4px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .camera-shutter-inner{ width:100%; height:100%; border-radius:50%; background:#fff; border:2px solid #000; transition:transform .1s; }
+  .camera-shutter-btn:active .camera-shutter-inner{ transform:scale(0.85); }
+  .camera-flip-btn{
+    width:48px; height:48px; border-radius:50%; background:rgba(60,60,64,0.6); display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:22px; cursor:pointer;
+  }
   /* ================= REMINDERS ================= */
   #reminders{background:#000;}
   .rem-lists-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 16px 8px; }
@@ -658,7 +784,31 @@
 <div class="device-scale">
 <div class="device">
   <div class="screen" id="screen">
-    <div class="dynamic-island"></div>
+    <div class="di-wrap" id="di-wrap">
+      <div class="dynamic-island" id="dynamic-island">
+        <div class="di-content" id="di-content">
+          <div class="di-icon" id="di-icon"><ion-icon name="timer-outline"></ion-icon></div>
+          <div class="di-compact-body" id="di-compact-body">
+            <span class="di-compact-text" id="di-compact-text"></span>
+            <div class="di-eq" id="di-eq"><span></span><span></span><span></span></div>
+          </div>
+          <div class="di-expanded-body" id="di-expanded-body">
+            <div class="di-expanded-top">
+              <div style="min-width:0;">
+                <div class="di-expanded-title" id="di-expanded-title"></div>
+                <div class="di-expanded-sub" id="di-expanded-sub"></div>
+              </div>
+              <div class="di-expanded-controls" id="di-expanded-controls"></div>
+            </div>
+            <div class="di-expanded-progress"><div class="di-expanded-progress-fill" id="di-expanded-progress-fill" style="width:0%;"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="di-satellite" id="di-satellite">
+        <div class="di-satellite-ring" id="di-satellite-ring"></div>
+        <ion-icon id="di-satellite-icon" name="timer-outline" style="color:#ff9f0a; position:relative; z-index:1;"></ion-icon>
+      </div>
+    </div>
 
     <div class="lock-screen" id="lock-screen">
       <div class="statusbar" id="sb-lock"><span class="time" id="clk-lock">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 10.5a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4zM4.6 7.4a5 5 0 016.8 0 .6.6 0 00.85-.85 6.2 6.2 0 00-8.5 0 .6.6 0 00.85.85zM2.2 4.7a8.9 8.9 0 0111.6 0 .6.6 0 10.8-.9 10.1 10.1 0 00-13.2 0 .6.6 0 10.8.9z" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span><span class="sb-batt-tip"></span></span></span></div>
@@ -693,7 +843,7 @@
           <div class="siri-suggest-row" id="siri-suggest-row"></div>
         </div>
       </div>
-      <div class="search-bar-dock">
+      <div class="search-bar-dock" id="search-bar-dock">
         <div class="search-bar-row">
           <div class="search-input-wrap">
             <ion-icon name="search"></ion-icon>
@@ -773,6 +923,19 @@
             <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 10.5a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4zM4.6 7.4a5 5 0 016.8 0 .6.6 0 00.85-.85 6.2 6.2 0 00-8.5 0 .6.6 0 00.85.85zM2.2 4.7a8.9 8.9 0 0111.6 0 .6.6 0 10.8-.9 10.1 10.1 0 00-13.2 0 .6.6 0 10.8.9z" fill="currentColor"/></svg>
             <span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span><span class="sb-batt-tip"></span></span>
           </span>
+        </div>
+        <div class="home-widgets-row">
+          <div class="home-widget" id="hw-weather" onclick="openApp('weather')">
+            <div class="hw-title-row"><span class="hw-title" id="hw-weather-city">Weather</span><ion-icon class="hw-icon" name="partly-sunny" id="hw-weather-icon"></ion-icon></div>
+            <div class="hw-weather-desc" id="hw-weather-desc">Loading…</div>
+            <div class="hw-weather-temp" id="hw-weather-temp"></div>
+            <div class="hw-weather-hilo" id="hw-weather-hilo"></div>
+          </div>
+          <div class="home-widget" id="hw-calendar" onclick="openApp('calendar')">
+            <div class="hw-title-row"><span class="hw-cal-weekday" id="hw-cal-weekday">Today</span></div>
+            <div class="hw-cal-date" id="hw-cal-date"></div>
+            <div class="hw-cal-events" id="hw-cal-events"></div>
+          </div>
         </div>
         <div class="app-grid" id="app-grid"></div>
         <div class="dock">
@@ -956,6 +1119,28 @@
         <input type="file" id="photos-file-input" accept="image/*" multiple style="display:none;" onchange="photosAddFiles(event)">
         <div class="photos-grid" id="photos-grid"></div>
         <div class="home-indicator dark-ind" onclick="goHome()"></div>
+      </div>
+
+      <!-- CAMERA -->
+      <div class="app-screen" id="camera">
+        <div class="camera-viewport">
+          <video id="camera-video" autoplay playsinline muted></video>
+          <div class="camera-flash-overlay" id="camera-flash-overlay"></div>
+          <div class="camera-permission-msg" id="camera-permission-msg">
+            <ion-icon name="camera-outline" style="font-size:44px; color:#8e8e93;"></ion-icon>
+            <div id="camera-permission-text">Requesting camera access…</div>
+            <div class="camera-retry-btn" id="camera-retry-btn" onclick="cameraStart()" style="display:none;">Try Again</div>
+          </div>
+        </div>
+        <div class="camera-top-bar">
+          <ion-icon name="chevron-down" onclick="closeCameraApp()"></ion-icon>
+          <ion-icon name="flash-off" id="camera-flash-icon" onclick="cameraToggleFlash()"></ion-icon>
+        </div>
+        <div class="camera-bottom-bar">
+          <div class="camera-last-thumb" id="camera-last-thumb" onclick="openApp('photos')"></div>
+          <div class="camera-shutter-btn" id="camera-shutter-btn" onclick="cameraCapture()"><div class="camera-shutter-inner"></div></div>
+          <div class="camera-flip-btn" id="camera-flip-btn" onclick="cameraFlip()"><ion-icon name="camera-reverse-outline"></ion-icon></div>
+        </div>
       </div>
 
       <!-- PHOTO VIEWER -->
@@ -1371,10 +1556,18 @@ function showGlobalKeyboard(el){
   kbShift = false;
   renderGlobalKeyboard();
   document.getElementById('global-keyboard').classList.add('open');
+  shiftSearchBarAboveKeyboard(true);
 }
 function hideGlobalKeyboard(){
   document.getElementById('global-keyboard').classList.remove('open');
   kbActiveEl = null;
+  shiftSearchBarAboveKeyboard(false);
+}
+
+function shiftSearchBarAboveKeyboard(keyboardOpen){
+  const bar = document.getElementById('search-bar-dock');
+  if(!bar) return;
+  bar.classList.toggle('kb-open', !!keyboardOpen);
 }
 
 document.addEventListener('focusin', function(e){
@@ -1391,6 +1584,19 @@ document.addEventListener('focusout', function(e){
       hideGlobalKeyboard();
     }
   }, 60);
+});
+
+// Cross-origin iframes (Safari, Blink) don't reliably fire focusout on the parent
+// document when the user taps into them, so our custom keyboard could get stuck open.
+// window.blur fires when focus leaves the top-level document entirely (e.g. into an
+// iframe), which is the standard way to detect this and let the iframe's own page
+// use the browser's real, native keyboard for typing.
+window.addEventListener('blur', function(){
+  setTimeout(()=>{
+    if(document.activeElement && document.activeElement.tagName === 'IFRAME'){
+      hideGlobalKeyboard();
+    }
+  }, 30);
 });
 
 function kbInsertText(text){
@@ -1506,7 +1712,7 @@ function renderGlobalKeyboard(){
     switchLayerKey.className = 'gkb-key shift';
     switchLayerKey.textContent = kbLayer === 'numbers' ? '#+=' : '123';
     switchLayerKey.addEventListener('mousedown', kbKeyMouseDown);
-    switchLayerKey.addEventListener('click', ()=>{ kbLayer = kbLayer === 'numbers' ? 'symbols' : 'numbers'; renderGlobalKeyboard(); });
+    switchLayerKey.addEventListener('click', ()=>{ kbLayer = kbLayer === 'numbers' ? 'symbols' : 'numbers'; renderGlobalKeyboard(); shiftSearchBarAboveKeyboard(true); });
     lastRow.appendChild(switchLayerKey);
     lastRowChars.forEach(c=>{
       const key = document.createElement('div');
@@ -1531,7 +1737,7 @@ function renderGlobalKeyboard(){
   modeToggle.className = 'gkb-key wide';
   modeToggle.textContent = kbLayer === 'letters' ? '123' : 'ABC';
   modeToggle.addEventListener('mousedown', kbKeyMouseDown);
-  modeToggle.addEventListener('click', ()=>{ kbLayer = kbLayer === 'letters' ? 'numbers' : 'letters'; renderGlobalKeyboard(); });
+  modeToggle.addEventListener('click', ()=>{ kbLayer = kbLayer === 'letters' ? 'numbers' : 'letters'; renderGlobalKeyboard(); shiftSearchBarAboveKeyboard(true); });
   spaceRow.appendChild(modeToggle);
   const space = document.createElement('div');
   space.className = 'gkb-key space';
@@ -1763,8 +1969,9 @@ const APP_META = {
   blink:     {label:'Blink',      cls:'blink'},
   photos:    {label:'Photos',     cls:'photos'},
   reminders: {label:'Reminders',  cls:'reminders'},
+  camera:    {label:'Camera',     cls:'camera'},
 };
-const GRID_SLOTS = 24;
+const GRID_SLOTS = 16;
 let gridItems = [
   {type:'app', id:'calc'},
   {type:'app', id:'notes'},
@@ -1777,11 +1984,89 @@ let gridItems = [
   {type:'app', id:'blink'},
   {type:'app', id:'photos'},
   {type:'app', id:'reminders'},
+  {type:'app', id:'camera'},
 ];
 while(gridItems.length < GRID_SLOTS) gridItems.push({type:'empty'});
 
 function renderCalendarIconContent(el){
-  el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;"><div style="background:#ff453a;color:#fff;font-size:9px;font-weight:600;width:100%;text-align:center;border-radius:16px 16px 0 0;padding:2px 0;position:absolute;top:0;">${['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()]}</div><div style="font-size:26px;font-weight:500;color:#1c1c1e;margin-top:8px;">${new Date().getDate()}</div></div>`;
+  const day = new Date().getDate();
+  const weekday = ['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()];
+  el.innerHTML = `
+    <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; overflow:hidden;">
+      <div style="width:100%; text-align:center; color:#ff3b30; font-size:11px; font-weight:700; letter-spacing:0.5px; padding:5px 0 1px; font-family:-apple-system, sans-serif;">${weekday}</div>
+      <div style="flex:1; display:flex; align-items:center; justify-content:center; width:100%;">
+        <div style="color:#1c1c1e; font-size:30px; font-weight:600; line-height:1; font-family:-apple-system, sans-serif; margin-top:-4px;">${day}</div>
+      </div>
+    </div>
+  `;
+}
+
+function squircleBoundaryDist(rad, half, cornerRadius, inset){
+  const dx = Math.cos(rad), dy = Math.sin(rad);
+  const absDx = Math.abs(dx), absDy = Math.abs(dy);
+  const maxX = half - inset, maxY = half - inset;
+  const cornerR = cornerRadius - inset;
+  const tEdgeX = absDx > 1e-6 ? maxX/absDx : Infinity;
+  const tEdgeY = absDy > 1e-6 ? maxY/absDy : Infinity;
+  let t = Math.min(tEdgeX, tEdgeY);
+  const px = dx*t, py = dy*t;
+  const cornerCenterX = (maxX - cornerR) * (dx >= 0 ? 1 : -1);
+  const cornerCenterY = (maxY - cornerR) * (dy >= 0 ? 1 : -1);
+  if(Math.abs(px) > maxX - cornerR && Math.abs(py) > maxY - cornerR){
+    const b = -2*(dx*cornerCenterX + dy*cornerCenterY);
+    const c = cornerCenterX*cornerCenterX + cornerCenterY*cornerCenterY - cornerR*cornerR;
+    const disc = b*b - 4*c;
+    if(disc >= 0){
+      const tCorner = (-b + Math.sqrt(disc)) / 2;
+      if(tCorner > 0) t = tCorner;
+    }
+  }
+  return t;
+}
+
+function renderClockIconContent(el){
+  const now = new Date();
+  const h = now.getHours() % 12;
+  const m = now.getMinutes();
+  const s = now.getSeconds();
+  const hourAngle = (h + m/60) * 30;
+  const minAngle = (m + s/60) * 6;
+  const secAngle = s * 6;
+
+  const half = 100, cornerRadius = 30, inset = 4;
+  const skipZone = new Set([0,1,2,58,59, 13,14,15,16,17, 28,29,30,31,32, 43,44,45,46,47]);
+  const ticks = [];
+  for(let i = 0; i < 60; i++){
+    if(skipZone.has(i)) continue; // leave room for the 12/3/6/9 numerals
+    const angleDeg = i * 6;
+    const isHour = i % 5 === 0;
+    const tickLen = isHour ? 11 : 4.5;
+    const width = isHour ? 2.8 : 1.5;
+    const rad = (angleDeg - 90) * Math.PI / 180;
+    const boundaryR = squircleBoundaryDist(rad, half, cornerRadius, inset);
+    const r2 = boundaryR - 1;
+    const r1 = r2 - tickLen;
+    const x1 = half + r1 * Math.cos(rad), y1 = half + r1 * Math.sin(rad);
+    const x2 = half + r2 * Math.cos(rad), y2 = half + r2 * Math.sin(rad);
+    ticks.push(`<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="#fff" stroke-width="${width}" stroke-linecap="round"/>`);
+  }
+
+  el.innerHTML = `
+    <svg viewBox="0 0 200 200" style="width:100%; height:100%; position:absolute; inset:0;">
+      ${ticks.join('')}
+      <text x="100" y="38" text-anchor="middle" fill="#e8e8e8" font-size="17" font-weight="500" font-family="-apple-system, sans-serif">12</text>
+      <text x="164" y="106" text-anchor="middle" fill="#e8e8e8" font-size="17" font-weight="500" font-family="-apple-system, sans-serif">3</text>
+      <text x="100" y="174" text-anchor="middle" fill="#e8e8e8" font-size="17" font-weight="500" font-family="-apple-system, sans-serif">6</text>
+      <text x="36" y="106" text-anchor="middle" fill="#e8e8e8" font-size="17" font-weight="500" font-family="-apple-system, sans-serif">9</text>
+      <g transform="rotate(${hourAngle} 100 100)"><line x1="100" y1="100" x2="100" y2="48" stroke="#fff" stroke-width="6" stroke-linecap="round"/></g>
+      <g transform="rotate(${minAngle} 100 100)"><line x1="100" y1="100" x2="100" y2="26" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/></g>
+      <g transform="rotate(${secAngle} 100 100)">
+        <line x1="100" y1="112" x2="100" y2="20" stroke="#ff9f0a" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="100" cy="100" r="4.4" fill="#ff9f0a"/>
+      </g>
+      <circle cx="100" cy="100" r="2.6" fill="#fff"/>
+    </svg>
+  `;
 }
 
 function buildAppIconEl(appId, sizeStyle){
@@ -1790,6 +2075,7 @@ function buildAppIconEl(appId, sizeStyle){
   el.className = 'app-icon ' + (meta ? meta.cls : '');
   if(sizeStyle) el.setAttribute('style', sizeStyle);
   if(appId === 'calendar') renderCalendarIconContent(el);
+  if(appId === 'clock') renderClockIconContent(el);
   if(appId === 'reminders') el.innerHTML = '<ion-icon name="list" style="color:#ff9500; font-size:60%;"></ion-icon>';
   return el;
 }
@@ -1840,6 +2126,7 @@ let currentApp = 'home';
 function openApp(id){
   document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  const previousApp = currentApp;
   currentApp = id;
   // If the previously focused field isn't inside the screen we're switching to, drop focus so the keyboard hides
   const active = document.activeElement;
@@ -1849,6 +2136,8 @@ function openApp(id){
   if(id==='weather' && !window.__wxLoaded){ loadWeather(); }
   if(id==='music' && !window.__musicRendered){ renderPlaylist(); }
   if(id==='wallpaper-settings' && typeof wpSyncPreview === 'function'){ wpSyncPreview(); }
+  if(id==='camera' && typeof cameraStart === 'function'){ cameraStart(); }
+  if(previousApp==='camera' && id!=='camera' && typeof cameraStop === 'function'){ cameraStop(); }
 }
 function goHome(){ openApp('home'); }
 
@@ -1903,6 +2192,7 @@ function ccSyncMusic(){
   function onStart(e){
     if(document.getElementById('lock-screen').classList.contains('open')) return; // lock screen owns gestures while open
     if(searchOpen) return;
+    if(e.target.closest && e.target.closest('#dynamic-island')) return; // island owns its own taps
     const rect = screenEl.getBoundingClientRect();
     const p = pointFromEvent(e);
     const localY = p.y - rect.top;
@@ -2011,6 +2301,7 @@ setInterval(updateLockClock, 1000*10);
       return;
     }
     // Otherwise, only open from top-left zone
+    if(e.target.closest && e.target.closest('#dynamic-island')) return; // island owns its own taps
     if(localY > TOP_ZONE) return;
     if(localX > rect.width * LEFT_ZONE_FRACTION) return;
     if(document.getElementById('control-center').classList.contains('open')) return;
@@ -2099,9 +2390,10 @@ setInterval(updateLockClock, 1000*10);
   }
 
   let startTime = 0;
+  let homeZoomTracking = false;
+  let homeZoomStartY = 0;
 
   function onStart(e){
-    if(currentApp === 'home') return; // nothing to close from home
     if(document.getElementById('lock-screen').classList.contains('open')) return; // lock screen owns gestures while open
     if(searchOpen) return; // search owns its own taps/swipes while open
     const rect = screenEl.getBoundingClientRect();
@@ -2109,12 +2401,26 @@ setInterval(updateLockClock, 1000*10);
     const localY = p.y - rect.top;
     const fromBottom = rect.height - localY;
     if(fromBottom > CLOSE_ZONE) return; // only start the gesture from the bottom home-indicator zone
+
+    if(currentApp === 'home'){
+      // On the home screen, swiping up briefly zooms the icons out (cosmetic, like real iOS), then bounces back
+      homeZoomTracking = true;
+      homeZoomStartY = p.y;
+      const grid = document.getElementById('app-grid');
+      const dock = document.querySelector('.dock');
+      if(grid) grid.style.transition = 'none';
+      if(dock) dock.style.transition = 'none';
+      return;
+    }
+
     activeEl = document.querySelector('.app-screen.active');
     if(!activeEl) return;
     tracking = true;
     startY = p.y; startX = p.x; currentY = p.y;
     startTime = Date.now();
     activeEl.style.transition = 'none';
+    activeEl.style.transformOrigin = 'center center';
+    activeEl.style.borderRadius = '38px'; // round the corners immediately, like real iOS
     activeEl.style.zIndex = '10';
     // Reveal the home screen live underneath the app being dragged, like real iOS
     const homeEl = document.getElementById('home');
@@ -2123,6 +2429,19 @@ setInterval(updateLockClock, 1000*10);
   }
 
   function onMove(e){
+    if(homeZoomTracking){
+      const p = pointFromEvent(e);
+      let dy = homeZoomStartY - p.y;
+      if(dy < 0) dy = 0;
+      const progress = Math.min(dy / 220, 1);
+      const scale = 1 - progress * 0.22;
+      const grid = document.getElementById('app-grid');
+      const dock = document.querySelector('.dock');
+      if(grid) grid.style.transform = `scale(${scale})`;
+      if(dock) dock.style.transform = `scale(${scale})`;
+      if(e.cancelable) e.preventDefault();
+      return;
+    }
     if(!tracking || !activeEl) return;
     const p = pointFromEvent(e);
     currentY = p.y;
@@ -2130,15 +2449,22 @@ setInterval(updateLockClock, 1000*10);
     if(dy < 0) dy = 0;
     const h = screenHeight();
     const progress = Math.min(dy / h, 1);
-    const translate = -progress * h * 0.5; // move up, shrink toward home
-    const scale = 1 - progress * 0.18;
+    const translate = -progress * h * 0.42; // move up toward center
+    const scale = 1 - progress * 0.32; // shrink noticeably toward center, like real iOS
     activeEl.style.transform = `translateY(${translate}px) scale(${scale})`;
-    activeEl.style.borderRadius = (10 + progress * 38) + 'px';
     activeEl.style.opacity = String(1 - progress * 0.35);
     if(e.cancelable) e.preventDefault();
   }
 
   function onEnd(){
+    if(homeZoomTracking){
+      homeZoomTracking = false;
+      const grid = document.getElementById('app-grid');
+      const dock = document.querySelector('.dock');
+      if(grid){ grid.style.transition = 'transform .3s cubic-bezier(.32,.72,0,1)'; grid.style.transform = ''; }
+      if(dock){ dock.style.transition = 'transform .3s cubic-bezier(.32,.72,0,1)'; dock.style.transform = ''; }
+      return;
+    }
     if(!tracking || !activeEl) return;
     tracking = false;
     const dy = Math.max(0, startY - currentY);
@@ -2151,7 +2477,8 @@ setInterval(updateLockClock, 1000*10);
     el.style.transition = 'transform .28s cubic-bezier(.32,.72,0,1), opacity .28s, border-radius .28s';
     if(shouldClose){
       const h = screenHeight();
-      el.style.transform = `translateY(${-h * 0.55}px) scale(0.78)`;
+      const wasCamera = el.id === 'camera';
+      el.style.transform = `translateY(${-h * 0.42}px) scale(0.7)`;
       el.style.opacity = '0';
       setTimeout(()=>{
         el.style.transition = 'none';
@@ -2162,6 +2489,7 @@ setInterval(updateLockClock, 1000*10);
         el.classList.remove('active');
         homeEl.style.zIndex = '';
         currentApp = 'home';
+        if(wasCamera && typeof cameraStop === 'function') cameraStop();
       }, 260);
     } else {
       el.style.transform = '';
@@ -2199,6 +2527,14 @@ function updateAllClocks(){
 }
 setInterval(updateAllClocks, 1000*10);
 updateAllClocks();
+
+function updateLiveAppIcons(){
+  // Keep the Clock icon's hands ticking and the Calendar icon's date/weekday current,
+  // wherever they're currently rendered (home grid, dock, etc).
+  document.querySelectorAll('.app-icon.clock').forEach(el => { if(typeof renderClockIconContent === 'function') renderClockIconContent(el); });
+  document.querySelectorAll('.app-icon.calendar').forEach(el => { if(typeof renderCalendarIconContent === 'function') renderCalendarIconContent(el); });
+}
+setInterval(updateLiveAppIcons, 1000);
 
 /* ========================= CALCULATOR ========================= */
 let calcState = { display:'0', prev:null, op:null, waitingNew:false };
@@ -2461,11 +2797,35 @@ const wxCodeMap = {
 function wxDesc(code){ return wxCodeMap[code] ? wxCodeMap[code][0] : 'Unknown'; }
 function wxIcon(code){ return wxCodeMap[code] ? wxCodeMap[code][1] : 'thermometer'; }
 function wxIconTag(code, size){ return `<ion-icon name="${wxIcon(code)}" style="font-size:${size||20}px;"></ion-icon>`; }
+function wxIsClear(code){ return code === 0 || code === 1 || code === 2; }
+
+function renderWeatherWidget(){
+  if(!lastWeatherData) return;
+  const cur = lastWeatherData.current;
+  const daily = lastWeatherData.daily;
+  const widget = document.getElementById('hw-weather');
+  widget.classList.toggle('wx-clear', wxIsClear(cur.weather_code));
+  widget.classList.toggle('wx-cloudy', !wxIsClear(cur.weather_code));
+  document.getElementById('hw-weather-city').textContent = lastWeatherName || 'Weather';
+  document.getElementById('hw-weather-icon').setAttribute('name', wxIcon(cur.weather_code));
+  document.getElementById('hw-weather-desc').textContent = wxDesc(cur.weather_code);
+  document.getElementById('hw-weather-temp').textContent = Math.round(cur.temperature_2m) + '°';
+  document.getElementById('hw-weather-hilo').textContent = `H:${Math.round(daily.temperature_2m_max[0])}° L:${Math.round(daily.temperature_2m_min[0])}°`;
+}
+function renderWeatherWidgetError(){
+  document.getElementById('hw-weather-desc').textContent = 'Unavailable';
+  document.getElementById('hw-weather-temp').textContent = '--°';
+  document.getElementById('hw-weather-hilo').textContent = '';
+}
+
+
+let lastWeatherData = null;
+let lastWeatherName = null;
 
 async function loadWeather(lat, lon, name){
   window.__wxLoaded = true;
   const content = document.getElementById('wx-content');
-  content.innerHTML = '<div class="wx-loading">Loading weather…</div>';
+  if(content) content.innerHTML = '<div class="wx-loading">Loading weather…</div>';
   try{
     if(lat===undefined){
       // default: try geolocation, else fallback to Luxembourg
@@ -2474,9 +2834,13 @@ async function loadWeather(lat, lon, name){
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7`;
     const res = await fetch(url);
     const data = await res.json();
-    renderWeather(data, name);
+    lastWeatherData = data;
+    lastWeatherName = name;
+    if(content) renderWeather(data, name);
+    if(typeof renderWeatherWidget === 'function') renderWeatherWidget();
   }catch(e){
-    content.innerHTML = '<div class="wx-loading">Could not load weather. Check network access to api.open-meteo.com.</div>';
+    if(content) content.innerHTML = '<div class="wx-loading">Could not load weather. Check network access to api.open-meteo.com.</div>';
+    if(typeof renderWeatherWidgetError === 'function') renderWeatherWidgetError();
   }
 }
 function renderWeather(data, name){
@@ -2563,6 +2927,26 @@ function calRender(){
     grid.innerHTML += `<div class="cal-day muted"><span class="num-circle">${d}</span></div>`;
   }
   calRenderEvents();
+  renderCalendarWidget();
+}
+function renderCalendarWidget(){
+  const weekdayEl = document.getElementById('hw-cal-weekday');
+  const dateEl = document.getElementById('hw-cal-date');
+  const eventsEl = document.getElementById('hw-cal-events');
+  if(!weekdayEl) return;
+  const today = new Date();
+  const weekdayNames = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  weekdayEl.textContent = weekdayNames[today.getDay()];
+  dateEl.textContent = today.getDate();
+  const key = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+  const events = (calEvents[key] || []).slice(0, 2);
+  if(!events.length){
+    eventsEl.innerHTML = '<div class="hw-cal-empty">No events today</div>';
+  } else {
+    eventsEl.innerHTML = events.map(ev =>
+      `<div class="hw-cal-event-row"><span class="hw-cal-event-dot"></span><span>${escapeHtml(ev.title)}</span></div>`
+    ).join('');
+  }
 }
 function calSelectDay(d){
   calSelected = new Date(calViewDate.getFullYear(), calViewDate.getMonth(), d);
@@ -2907,6 +3291,76 @@ function deleteCurrentPhoto(){
 })();
 renderPhotosGrid();
 
+/* ========================= CAMERA ========================= */
+let cameraStream = null;
+let cameraFacingMode = 'user'; // 'user' (front) or 'environment' (back)
+let cameraFlashOn = false;
+
+async function cameraStart(){
+  const msg = document.getElementById('camera-permission-msg');
+  const retryBtn = document.getElementById('camera-retry-btn');
+  const permText = document.getElementById('camera-permission-text');
+
+  cameraUpdateLastThumb();
+
+  // Live camera access isn't available in this environment, so the viewfinder
+  // shows an explanatory message in place of a real feed. The rest of the
+  // camera UI (shutter, flip, flash) stays visible for the full look and feel.
+  msg.classList.add('visible');
+  permText.textContent = "Camera preview isn't available here.";
+  retryBtn.style.display = 'none';
+}
+
+function cameraStop(){
+  const video = document.getElementById('camera-video');
+  if(cameraStream){
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+  if(video) video.srcObject = null;
+}
+
+function cameraFlip(){
+  cameraFacingMode = cameraFacingMode === 'user' ? 'environment' : 'user';
+  cameraStart();
+}
+
+function cameraToggleFlash(){
+  cameraFlashOn = !cameraFlashOn;
+  const icon = document.getElementById('camera-flash-icon');
+  icon.setAttribute('name', cameraFlashOn ? 'flash' : 'flash-off');
+  icon.style.color = cameraFlashOn ? '#ffd60a' : '#fff';
+}
+
+function cameraCapture(){
+  // No real video feed is available in this environment, so the shutter can't
+  // capture an actual frame. Flash the shutter for feedback and let the person know.
+  const flash = document.getElementById('camera-flash-overlay');
+  flash.classList.remove('flashing');
+  void flash.offsetWidth; // restart the animation
+  flash.classList.add('flashing');
+
+  const permText = document.getElementById('camera-permission-text');
+  const msg = document.getElementById('camera-permission-msg');
+  msg.classList.add('visible');
+  permText.textContent = "Camera preview isn't available here, so no photo was taken.";
+}
+
+function cameraUpdateLastThumb(){
+  const thumb = document.getElementById('camera-last-thumb');
+  if(!thumb) return;
+  if(photosList.length){
+    thumb.style.backgroundImage = `url('${photosList[photosList.length-1].dataUrl}')`;
+  } else {
+    thumb.style.backgroundImage = '';
+  }
+}
+
+function closeCameraApp(){
+  cameraStop();
+  goHome();
+}
+
 /* ========================= REMINDERS ========================= */
 const REM_LIST_COLORS = ['#0a84ff','#30d158','#ff9f0a','#ff453a','#af52de','#5e5ce6','#ff375f'];
 let remLists = [
@@ -3043,6 +3497,219 @@ function pSaveReminders(){
   }
   renderRemindersHome();
 })();
+
+/* ========================= DYNAMIC ISLAND ========================= */
+let diExpanded = false;
+let diCurrentActivity = null; // 'timer' | 'music' | null
+let diPromoted = null; // 'timer' | 'music' | null — manually promoted to primary via long-press on the satellite
+
+function diGetActivities(){
+  const timerActive = typeof timerRunning !== 'undefined' && timerRunning;
+  const musicActive = typeof musicPlaying !== 'undefined' && musicPlaying;
+  if(musicActive && timerActive){
+    // Default: music owns the main pill, timer is the satellite — unless the person
+    // has long-pressed the satellite to manually promote the timer instead.
+    if(diPromoted === 'timer') return {primary:'timer', secondary:'music'};
+    return {primary:'music', secondary:'timer'};
+  }
+  if(musicActive) return {primary:'music', secondary:null};
+  if(timerActive) return {primary:'timer', secondary:null};
+  diPromoted = null; // reset once neither/only-one is active, so it doesn't stick around stale
+  return {primary:null, secondary:null};
+}
+
+function diTimerFormat(sec){
+  const m = Math.floor(Math.max(sec,0)/60), s = Math.max(sec,0)%60;
+  return `${m}:${s.toString().padStart(2,'0')}`;
+}
+function diMusicFormat(s){
+  return `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`;
+}
+
+let diPrevPrimary = null;
+let diPrevSecondary = null;
+
+function diTriggerSpin(el){
+  if(!el) return;
+  el.classList.remove('spinning');
+  // Force reflow so re-adding the class restarts the animation even if it was just removed
+  void el.offsetWidth;
+  el.classList.add('spinning');
+  setTimeout(()=> el.classList.remove('spinning'), 600);
+}
+
+function diRender(){
+  const island = document.getElementById('dynamic-island');
+  const wrap = document.getElementById('di-wrap');
+  const satellite = document.getElementById('di-satellite');
+  const { primary, secondary } = diGetActivities();
+  diCurrentActivity = primary;
+
+  if(primary !== diPrevPrimary || secondary !== diPrevSecondary){
+    if(primary) diTriggerSpin(island);
+    if(secondary) diTriggerSpin(satellite);
+    diPrevPrimary = primary;
+    diPrevSecondary = secondary;
+  }
+
+  if(!primary){
+    island.classList.remove('compact', 'expanded');
+    satellite.classList.remove('visible');
+    wrap.classList.remove('has-expanded');
+    diExpanded = false;
+    return;
+  }
+
+  island.classList.toggle('expanded', diExpanded);
+  island.classList.toggle('compact', !diExpanded);
+  wrap.classList.toggle('has-expanded', diExpanded);
+  // The satellite bubble hides while the main island is expanded, matching real iOS
+  satellite.classList.toggle('visible', !!secondary && !diExpanded);
+
+  const icon = document.getElementById('di-icon');
+  const compactText = document.getElementById('di-compact-text');
+  const eq = document.getElementById('di-eq');
+  const expTitle = document.getElementById('di-expanded-title');
+  const expSub = document.getElementById('di-expanded-sub');
+  const expControls = document.getElementById('di-expanded-controls');
+  const expFill = document.getElementById('di-expanded-progress-fill');
+
+  if(primary === 'timer'){
+    icon.innerHTML = '<ion-icon name="timer-outline" style="color:#ff9f0a;"></ion-icon>';
+    eq.style.display = 'none';
+    compactText.style.display = '';
+    compactText.textContent = diTimerFormat(timerRemaining);
+    expTitle.textContent = 'Timer';
+    expSub.textContent = diTimerFormat(timerRemaining) + ' remaining';
+    const pct = timerTotal > 0 ? Math.max(0, Math.min(100, (1 - timerRemaining/timerTotal) * 100)) : 0;
+    expFill.style.width = pct + '%';
+    expControls.innerHTML = '<ion-icon name="pause"></ion-icon>';
+    expControls.querySelector('ion-icon').onclick = function(e){ e.stopPropagation(); timerToggle(); diRender(); };
+  } else if(primary === 'music'){
+    const t = playlist[musicIdx];
+    icon.innerHTML = '<ion-icon name="musical-notes" style="color:#fff;"></ion-icon>';
+    icon.style.background = `linear-gradient(135deg, ${t.color1}, ${t.color2})`;
+    compactText.style.display = 'none';
+    eq.style.display = '';
+    expTitle.textContent = t.title;
+    expSub.textContent = t.artist;
+    const pct = t.dur > 0 ? Math.min(100, (musicElapsed/t.dur)*100) : 0;
+    expFill.style.width = pct + '%';
+    expControls.innerHTML = '<ion-icon name="play-skip-back"></ion-icon><ion-icon name="pause"></ion-icon>';
+    const icons = expControls.querySelectorAll('ion-icon');
+    icons[0].onclick = function(e){ e.stopPropagation(); musicPrev(); diRender(); };
+    icons[1].onclick = function(e){ e.stopPropagation(); musicToggle(); diRender(); };
+  }
+
+  // Satellite bubble — can now represent either activity depending on which one is secondary
+  const satIcon = document.getElementById('di-satellite-icon');
+  const ring = document.getElementById('di-satellite-ring');
+  if(secondary === 'timer'){
+    satIcon.setAttribute('name', 'timer-outline');
+    satIcon.style.color = '#ff9f0a';
+    const pct = timerTotal > 0 ? Math.max(0, Math.min(100, (1 - timerRemaining/timerTotal) * 100)) : 0;
+    ring.style.setProperty('--di-sat-pct', pct + '%');
+    ring.style.display = '';
+  } else if(secondary === 'music'){
+    satIcon.setAttribute('name', 'musical-notes');
+    satIcon.style.color = '#fff';
+    ring.style.display = 'none';
+  }
+}
+
+// Poll every second so the island stays in sync with timer/music state without
+// needing to hook into every mutation point in those separate systems.
+setInterval(diRender, 1000);
+diRender();
+
+/* Tap = jump to the relevant app (or collapse if expanded). Long-press = expand. */
+(function(){
+  const island = document.getElementById('dynamic-island');
+  let pressTimer = null;
+  let pressStartTime = 0;
+  let longPressFired = false;
+  const LONG_PRESS_MS = 420;
+
+  function onDown(e){
+    if(!diCurrentActivity) return;
+    if(e.target.closest && e.target.closest('.di-expanded-controls')) return; // let control buttons handle their own taps
+    longPressFired = false;
+    pressStartTime = Date.now();
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(()=>{
+      longPressFired = true;
+      diExpanded = true;
+      diRender();
+    }, LONG_PRESS_MS);
+  }
+  function onUp(e){
+    if(e.target.closest && e.target.closest('.di-expanded-controls')) { clearTimeout(pressTimer); return; }
+    clearTimeout(pressTimer);
+    if(!diCurrentActivity) return;
+    const heldMs = Date.now() - pressStartTime;
+    if(longPressFired && heldMs >= LONG_PRESS_MS){
+      // This release just finished the long-press that expanded it; don't also treat it as a tap.
+      longPressFired = false;
+      return;
+    }
+    longPressFired = false;
+    if(diExpanded){
+      diExpanded = false;
+      diRender();
+    } else {
+      openApp(diCurrentActivity === 'timer' ? 'clock' : 'music');
+    }
+  }
+  island.addEventListener('touchstart', onDown, {passive:true});
+  island.addEventListener('touchend', onUp);
+  island.addEventListener('mousedown', onDown);
+  island.addEventListener('mouseup', onUp);
+})();
+
+/* Satellite bubble: tap = jump to its app, long-press = promote it to the main pill */
+(function(){
+  const satellite = document.getElementById('di-satellite');
+  let pressTimer = null;
+  let pressStartTime = 0;
+  let longPressFired = false;
+  const LONG_PRESS_MS = 420;
+
+  function currentSecondary(){
+    return diGetActivities().secondary;
+  }
+
+  function onDown(e){
+    if(!satellite.classList.contains('visible')) return;
+    longPressFired = false;
+    pressStartTime = Date.now();
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(()=>{
+      longPressFired = true;
+      const sec = currentSecondary();
+      if(sec){ diPromoted = sec; diRender(); }
+    }, LONG_PRESS_MS);
+  }
+  function onUp(e){
+    clearTimeout(pressTimer);
+    if(!satellite.classList.contains('visible')) return;
+    const heldMs = Date.now() - pressStartTime;
+    if(longPressFired && heldMs >= LONG_PRESS_MS){
+      longPressFired = false;
+      return; // this release just finished the promotion long-press
+    }
+    longPressFired = false;
+    const sec = currentSecondary();
+    if(sec) openApp(sec === 'timer' ? 'clock' : 'music');
+  }
+  satellite.addEventListener('touchstart', onDown, {passive:true});
+  satellite.addEventListener('touchend', onUp);
+  satellite.addEventListener('mousedown', onDown);
+  satellite.addEventListener('mouseup', onUp);
+})();
+
+/* ========================= HOME SCREEN WIDGETS: initial load ========================= */
+loadWeather(); // populates the Weather home-screen widget (and the Weather app once opened)
+if(typeof renderCalendarWidget === 'function') renderCalendarWidget();
 
 
 
