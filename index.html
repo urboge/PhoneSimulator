@@ -75,15 +75,6 @@
     display:flex; align-items:center; justify-content:center;
     transition:width .38s cubic-bezier(.32,.9,0,1.1), height .38s cubic-bezier(.32,.9,0,1.1), border-radius .38s cubic-bezier(.32,.9,0,1.1), top .38s cubic-bezier(.32,.9,0,1.1);
   }
-  @keyframes di-spin{
-    0%{ transform:rotate(0deg) scale(1); }
-    35%{ transform:rotate(200deg) scale(0.82); }
-    70%{ transform:rotate(380deg) scale(1.05); }
-    100%{ transform:rotate(360deg) scale(1); }
-  }
-  .dynamic-island.spinning, .di-satellite.spinning{
-    animation:di-spin .55s cubic-bezier(.32,.9,0,1.1);
-  }
   .dynamic-island.compact{
     width:190px;
   }
@@ -1944,16 +1935,14 @@ function performSearch(query){
 
 async function pSave(key, value){
   try{
-    if(!window.storage) return;
-    await window.storage.set(key, JSON.stringify(value), false);
+    localStorage.setItem('iphone-emu:' + key, JSON.stringify(value));
   }catch(err){ console.error('Storage save failed for', key, err); }
 }
 async function pLoad(key){
   try{
-    if(!window.storage) return null;
-    const result = await window.storage.get(key, false);
-    return result ? JSON.parse(result.value) : null;
-  }catch(err){ return null; } // key doesn't exist or storage unavailable
+    const raw = localStorage.getItem('iphone-emu:' + key);
+    return raw ? JSON.parse(raw) : null;
+  }catch(err){ return null; } // key doesn't exist, storage unavailable, or JSON was corrupted
 }
 
 /* ========================= HOME SCREEN GRID (data-driven, drag/reorder/folders) ========================= */
@@ -3163,7 +3152,7 @@ function wpReset(){
   document.getElementById('home-wallpaper-layer').style.filter = '';
   document.getElementById('wp-preview-blur').style.filter = '';
   document.getElementById('wp-url-input').value = '';
-  try{ if(window.storage) window.storage.delete('wallpaper', false); }catch(err){}
+  try{ localStorage.removeItem('iphone-emu:wallpaper'); }catch(err){}
 }
 
 function wpSyncPreview(){
@@ -3268,25 +3257,24 @@ function closePhotoViewer(){
 function deleteCurrentPhoto(){
   if(!currentPhotoId) return;
   photosList = photosList.filter(p => p.id !== currentPhotoId);
-  try{ if(window.storage) window.storage.delete('photo:' + currentPhotoId, false); }catch(err){}
+  try{ localStorage.removeItem('iphone-emu:photo:' + currentPhotoId); }catch(err){}
   closePhotoViewer();
   renderPhotosGrid();
 }
 
 (async function loadPhotos(){
   try{
-    if(!window.storage) return;
-    const listResult = await window.storage.list('photo:', false);
-    if(!listResult || !listResult.keys || !listResult.keys.length) return;
     const loaded = [];
-    for(const key of listResult.keys){
-      const result = await window.storage.get(key, false);
-      if(result){
-        try{ loaded.push(JSON.parse(result.value)); }catch(err){}
+    for(let i = 0; i < localStorage.length; i++){
+      const key = localStorage.key(i);
+      if(key && key.indexOf('iphone-emu:photo:') === 0){
+        try{ loaded.push(JSON.parse(localStorage.getItem(key))); }catch(err){}
       }
     }
-    photosList = loaded;
-    renderPhotosGrid();
+    if(loaded.length){
+      photosList = loaded;
+      renderPhotosGrid();
+    }
   }catch(err){ /* storage unavailable, start empty */ }
 })();
 renderPhotosGrid();
@@ -3529,15 +3517,6 @@ function diMusicFormat(s){
 let diPrevPrimary = null;
 let diPrevSecondary = null;
 
-function diTriggerSpin(el){
-  if(!el) return;
-  el.classList.remove('spinning');
-  // Force reflow so re-adding the class restarts the animation even if it was just removed
-  void el.offsetWidth;
-  el.classList.add('spinning');
-  setTimeout(()=> el.classList.remove('spinning'), 600);
-}
-
 function diRender(){
   const island = document.getElementById('dynamic-island');
   const wrap = document.getElementById('di-wrap');
@@ -3546,8 +3525,6 @@ function diRender(){
   diCurrentActivity = primary;
 
   if(primary !== diPrevPrimary || secondary !== diPrevSecondary){
-    if(primary) diTriggerSpin(island);
-    if(secondary) diTriggerSpin(satellite);
     diPrevPrimary = primary;
     diPrevSecondary = secondary;
   }
