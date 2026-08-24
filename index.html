@@ -8,6 +8,7 @@
 <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 <style>
   :root{
+    --phone-scale-vh: 85;
     --bezel:#0a0a0c;
     --screen:#000;
     --ios-blue:#0a84ff;
@@ -30,14 +31,16 @@
     overflow:hidden;
   }
   .device-stage{
-    height:85vh;
+    height:calc(var(--phone-scale-vh, 85) * 1vh);
     aspect-ratio:390/844;
     display:flex; align-items:center; justify-content:center;
+    transition:height .25s ease;
   }
   .device-scale{
     width:390px; height:844px;
-    transform:scale(calc(85vh / 844px));
+    transform:scale(calc(var(--phone-scale-vh, 85) * 1vh / 844px));
     transform-origin:center;
+    transition:transform .25s ease;
   }
 
   /* ---------- Device shell ---------- */
@@ -62,7 +65,7 @@
   }
   .dynamic-island{
     position:absolute; top:14px; left:50%; transform:translateX(-50%);
-    width:126px; height:37px; background:#000; border-radius:20px; z-index:5000;
+    width:126px; height:37px; background:#000; border-radius:20px; z-index:9900;
     box-shadow:0 0 0 1px rgba(255,255,255,0.04);
   }
 
@@ -155,54 +158,7 @@
   .search-input-wrap .search-mic{ color:#8e8e93; font-size:16px; }
   .search-cancel{color:var(--ios-blue); font-size:16px; cursor:pointer; white-space:nowrap;}
 
-  .search-keyboard{
-    display:flex; flex-direction:column; gap:8px; padding-top:2px;
-  }
-  .kb-row{ display:flex; gap:6px; justify-content:center; }
-  .kb-key{
-    flex:1; max-width:34px; height:42px; background:#4a4a4c; border-radius:6px;
-    display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;
-    box-shadow:0 1px 0 rgba(0,0,0,0.4); cursor:pointer; user-select:none;
-  }
-  .kb-key:active{ background:#6a6a6c; }
-  .kb-key.wide{ max-width:none; flex:1.6; font-size:13px; background:#3a3a3c; }
-  .kb-key.space{ max-width:none; flex:5; }
-  .kb-key.shift, .kb-key.back{ max-width:44px; flex:1.3; background:#3a3a3c; }
-  .kb-row.bottom-row{ align-items:center; }
-
   .search-empty-hint{color:rgba(255,255,255,0.4); font-size:14px; text-align:center; padding:40px 20px;}
-
-  /* ---------- App Switcher ---------- */
-  .app-switcher{
-    position:absolute; inset:0; z-index:9600;
-    background:rgba(20,20,24,0.75); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    opacity:0; pointer-events:none; transition:opacity .25s ease;
-  }
-  .app-switcher.open{ opacity:1; pointer-events:auto; }
-  .switcher-track{
-    display:flex; align-items:center; overflow-x:auto; padding:0 40px;
-    width:100%; scroll-snap-type:x proximity;
-  }
-  .switcher-card-wrap{
-    display:flex; flex-direction:column; align-items:center; gap:10px; flex-shrink:0;
-    scroll-snap-align:center; touch-action:pan-x; position:relative;
-    margin-left:-34px;
-  }
-  .switcher-card-wrap:first-child{ margin-left:0; }
-  .switcher-card.app-icon{
-    width:230px; height:420px; border-radius:26px; overflow:hidden; position:relative;
-    box-shadow:0 12px 30px rgba(0,0,0,0.55); cursor:pointer;
-    transition:transform .22s ease, opacity .22s ease;
-  }
-  .switcher-card.flicking{ transform:translateY(-500px); opacity:0; }
-  .switcher-card-label{
-    display:flex; align-items:center; justify-content:center; gap:6px;
-    color:#fff; font-size:13px; font-weight:600; text-shadow:0 1px 4px rgba(0,0,0,0.4);
-    order:-1;
-  }
-  .switcher-card-label ion-icon{font-size:16px;}
-  .switcher-empty-hint{color:rgba(255,255,255,0.55); font-size:15px; text-align:center; padding:0 40px;}
 
   .notif-banner-stack{
     position:absolute; top:14px; left:0; right:0; z-index:9700;
@@ -231,7 +187,7 @@
   .notif-banner-time{font-size:11px; color:rgba(255,255,255,0.5); flex-shrink:0; margin-top:1px;}
 
   .lock-notif-stack{
-    position:absolute; top:220px; left:16px; right:16px; bottom:150px;
+    position:absolute; top:236px; left:16px; right:16px; bottom:150px;
     display:flex; flex-direction:column; gap:8px; overflow-y:auto;
   }
   .lock-notif{
@@ -255,8 +211,8 @@
     pointer-events:none;
   }
   .lock-screen.open{ transform:translateY(0); pointer-events:auto; }
-  .lock-time{font-size:88px; font-weight:600; color:#fff; margin-top:90px; line-height:1; letter-spacing:-1px; text-shadow:0 2px 12px rgba(0,0,0,0.25);}
-  .lock-date{font-size:20px; font-weight:500; color:#fff; margin-top:6px; text-shadow:0 1px 8px rgba(0,0,0,0.25);}
+  .lock-date{font-size:17px; font-weight:600; color:#fff; margin-top:64px; text-shadow:0 1px 8px rgba(0,0,0,0.25);}
+  .lock-time{font-size:88px; font-weight:600; color:#fff; margin-top:2px; line-height:1; letter-spacing:-1px; text-shadow:0 2px 12px rgba(0,0,0,0.25);}
   .lock-icons{position:absolute; bottom:34px; left:0; right:0; display:flex; justify-content:space-between; align-items:center; padding:0 34px;}
   .lock-icon-btn{
     width:50px; height:50px; border-radius:50%; background:rgba(255,255,255,0.22); backdrop-filter:blur(10px);
@@ -378,52 +334,6 @@
   }
   .app-icon-wrap{display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; width:60px;}
   .app-icon-wrap.empty-slot{cursor:default; height:60px;}
-
-  /* ---------- Jiggle / edit mode ---------- */
-  @keyframes jiggle{
-    0%{ transform:rotate(-1.5deg); }
-    50%{ transform:rotate(1.5deg); }
-    100%{ transform:rotate(-1.5deg); }
-  }
-  .app-grid.jiggling .app-icon-wrap:not(.dragging){ animation: jiggle .22s ease-in-out infinite; }
-  .app-icon-wrap.dragging{ opacity:0.35; }
-  .app-icon-wrap.drag-ghost{
-    position:fixed; z-index:9800; pointer-events:none; width:60px;
-    transform:scale(1.12); filter:drop-shadow(0 8px 16px rgba(0,0,0,0.4));
-  }
-  .app-icon-wrap.folder-hover .app-icon{ transform:scale(1.12); transition:transform .15s; }
-  .app-icon.folder-icon{
-    display:grid; grid-template-columns:1fr 1fr; gap:3px; padding:7px;
-    background:rgba(120,120,128,0.35); backdrop-filter:blur(10px);
-  }
-  .app-icon.folder-icon .mini-icon{
-    border-radius:6px !important; width:auto !important; height:auto !important; box-shadow:none !important;
-    aspect-ratio:1;
-  }
-  .done-editing-btn{
-    position:absolute; top:8px; right:15px; z-index:100; color:#fff; font-size:15px; font-weight:600;
-    background:rgba(60,60,64,0.6); backdrop-filter:blur(10px); padding:6px 14px; border-radius:14px; display:none;
-  }
-  .done-editing-btn.visible{ display:block; }
-
-  /* ---------- Folder view ---------- */
-  #folder-view{ background:transparent; }
-  .folder-backdrop{
-    position:absolute; inset:0; background:rgba(0,0,0,0.45); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-  }
-  .folder-panel{
-    position:absolute; top:120px; left:24px; right:24px;
-    background:rgba(60,60,64,0.6); backdrop-filter:blur(30px); border-radius:26px; padding:22px 18px;
-  }
-  .folder-name-input{
-    display:block; width:100%; text-align:center; background:transparent; border:none; outline:none;
-    color:#fff; font-size:18px; font-weight:600; margin-bottom:18px;
-  }
-  .folder-grid{
-    display:grid; grid-template-columns:repeat(3, 1fr); gap:20px 10px; justify-items:center; min-height:60px;
-  }
-  .folder-delete-row{ text-align:center; margin-top:20px; }
-  .folder-delete-row span{ color:#ff453a; font-size:15px; font-weight:500; cursor:pointer; }
   .app-icon{
     width:60px; height:60px; border-radius:16px;
     display:flex; align-items:center; justify-content:center;
@@ -440,9 +350,9 @@
   .app-icon.calendar{background-color:#fff;}
   .app-icon.music{background-color:#fa2d48; background-image:url('https://static.wikia.nocookie.net/logopedia/images/8/8b/Apple_Music_liquid_glass.png/revision/latest/scale-to-width-down/48?cb=20260625151153');}
   .app-icon.safari{background-color:#0a84ff; background-image:url('https://static.wikia.nocookie.net/logopedia/images/7/73/Safari_2025.png/revision/latest/scale-to-width-down/48?cb=20251104204856');}
-  .app-icon.settings{background-color:#636366; background-image:url('https://static.wikia.nocookie.net/logopedia/images/a/ac/Settings_2025_II.png/revision/latest/scale-to-width-down/48?cb=20260708235800');}
+  .app-icon.settings{background-color:#636366; background-image:url('https://static.wikia.nocookie.net/logopedia/images/9/95/Settings_iOS27.png/revision/latest/scale-to-width-down/48?cb=20260609174208');}
   .app-icon.blink{background-color:#5e5ce6; background-image:url('images/app-icon/blink.png');}
-  .app-icon.photos{background:linear-gradient(135deg,#ffd60a,#ff9500 25%,#ff375f 50%,#af52de 75%,#5e5ce6 100%);}
+  .app-icon.photos{background-color:#fff; background-image:url('https://static.wikia.nocookie.net/logopedia/images/8/83/Apple_Photos_2025_III.png/revision/latest/scale-to-width-down/48?cb=20251104204247');}
   .app-icon.reminders{background-color:#fff;}
 
   .dock{
@@ -453,6 +363,31 @@
     padding:14px 16px;
     display:flex; justify-content:space-between;
   }
+  /* ---------- Global Keyboard ---------- */
+  .global-keyboard{
+    position:absolute; left:0; right:0; bottom:0; z-index:9950;
+    background:#1c1c1e; border-top:1px solid rgba(255,255,255,0.08);
+    padding:8px 4px calc(env(safe-area-inset-bottom, 0px) + 6px);
+    display:flex; flex-direction:column; gap:8px;
+    transform:translateY(100%);
+    transition:transform .28s cubic-bezier(.32,.72,0,1);
+    pointer-events:none;
+  }
+  .global-keyboard.open{ transform:translateY(0); pointer-events:auto; }
+  .gkb-row{ display:flex; gap:6px; justify-content:center; padding:0 3px; }
+  .gkb-key{
+    flex:1; max-width:34px; height:42px; background:#4a4a4c; border-radius:6px;
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;
+    box-shadow:0 1px 0 rgba(0,0,0,0.4); cursor:pointer; user-select:none;
+  }
+  .gkb-key:active{ background:#6a6a6c; }
+  .gkb-key.wide{ max-width:none; flex:1.6; font-size:13px; background:#3a3a3c; }
+  .gkb-key.space{ max-width:none; flex:5; }
+  .gkb-key.shift, .gkb-key.back{ max-width:44px; flex:1.3; background:#3a3a3c; }
+  .gkb-key.shift.active{ background:#6a6a6c; color:var(--ios-blue); }
+  .gkb-row.bottom-row{ align-items:center; }
+  .gkb-key.narrow{ max-width:26px; }
+
   .home-indicator{
     position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
     width:134px; height:5px; background:#fff; border-radius:3px; z-index:4000; opacity:0.9;
@@ -725,17 +660,20 @@
     <div class="dynamic-island"></div>
 
     <div class="lock-screen" id="lock-screen">
-      <div class="lock-time" id="lock-time">9:41</div>
+      <div class="statusbar" id="sb-lock"><span class="time" id="clk-lock">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 10.5a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4zM4.6 7.4a5 5 0 016.8 0 .6.6 0 00.85-.85 6.2 6.2 0 00-8.5 0 .6.6 0 00.85.85zM2.2 4.7a8.9 8.9 0 0111.6 0 .6.6 0 10.8-.9 10.1 10.1 0 00-13.2 0 .6.6 0 10.8.9z" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span><span class="sb-batt-tip"></span></span></span></div>
       <div class="lock-date" id="lock-date">Sunday, August 23</div>
+      <div class="lock-time" id="lock-time">9:41</div>
       <div class="lock-notif-stack" id="lock-notif-stack"></div>
       <div class="lock-icons">
-        <div class="lock-icon-btn"><ion-icon name="flashlight"></ion-icon></div>
+        <div class="lock-icon-btn"><ion-icon name="flashlight" style="transform:rotate(-45deg);"></ion-icon></div>
         <div class="lock-icon-btn"><ion-icon name="camera"></ion-icon></div>
       </div>
       <div class="lock-hint">Swipe up to unlock</div>
     </div>
 
     <div class="notif-banner-stack" id="notif-banner-stack"></div>
+
+    <div class="global-keyboard" id="global-keyboard"></div>
 
     <div class="search-overlay" id="search-overlay">
       <div class="search-bg-layer"></div>
@@ -763,12 +701,7 @@
           </div>
           <span class="search-cancel" onclick="closeSearch()">Cancel</span>
         </div>
-        <div class="search-keyboard" id="search-keyboard"></div>
       </div>
-    </div>
-
-    <div class="app-switcher" id="app-switcher" onclick="if(event.target.id==='app-switcher') closeSwitcher();">
-      <div class="switcher-track" id="switcher-track"></div>
     </div>
 
     <div class="control-center-backdrop" id="cc-backdrop" onclick="closeControlCenter()"></div>
@@ -832,7 +765,6 @@
       <!-- HOME SCREEN -->
       <div class="app-screen active" id="home">
         <div class="home-wallpaper-layer" id="home-wallpaper-layer"></div>
-        <div class="done-editing-btn" id="done-editing-btn" onclick="exitJiggleMode()">Done</div>
         <div class="statusbar" id="sb-home">
           <span class="time" id="clk-home">9:41</span>
           <span class="icons">
@@ -849,18 +781,6 @@
           <div class="app-icon-wrap"><div class="app-icon calc" onclick="openApp('calc')"></div></div>
         </div>
         <div class="home-indicator"></div>
-      </div>
-
-      <!-- FOLDER VIEW -->
-      <div class="app-screen" id="folder-view">
-        <div class="folder-backdrop" onclick="closeFolderView()"></div>
-        <div class="folder-panel" id="folder-panel">
-          <input type="text" class="folder-name-input" id="folder-name-input" oninput="renameFolderLive(this.value)">
-          <div class="folder-grid" id="folder-grid"></div>
-          <div class="folder-delete-row">
-            <span onclick="deleteFolderKeepApps()">Delete Folder</span>
-          </div>
-        </div>
       </div>
 
       <!-- CALCULATOR -->
@@ -1095,6 +1015,7 @@
           <div class="settings-group">
             <div class="settings-row"><span class="settings-icon" style="background:#ff9f0a;"><ion-icon name="notifications"></ion-icon></span>Notifications<span class="chev">›</span></div>
             <div class="settings-row" onclick="openApp('wallpaper-settings')"><span class="settings-icon" style="background:#af52de;"><ion-icon name="color-palette"></ion-icon></span>Wallpaper<span class="chev">›</span></div>
+            <div class="settings-row" onclick="openApp('phone-size-settings')"><span class="settings-icon" style="background:#0a84ff;"><ion-icon name="phone-portrait"></ion-icon></span>Phone Size<span class="chev">›</span></div>
             <div class="settings-row"><span class="settings-icon" style="background:#8e8e93;"><ion-icon name="volume-high"></ion-icon></span>Sounds & Haptics<span class="chev">›</span></div>
             <div class="settings-row"><span class="settings-icon" style="background:#8e8e93;"><ion-icon name="moon"></ion-icon></span>Dark Mode<div class="settings-toggle on" id="darkmode-toggle" onclick="toggleDarkMode(this)"><div class="knob"></div></div></div>
           </div>
@@ -1147,6 +1068,34 @@
 
           <div class="settings-group">
             <div class="settings-row" onclick="wpReset()">
+              <span class="settings-icon" style="background:#ff453a;"><ion-icon name="refresh"></ion-icon></span>
+              Reset to Default
+            </div>
+          </div>
+        </div>
+        <div class="home-indicator dark-ind" onclick="goHome()"></div>
+      </div>
+
+      <!-- PHONE SIZE SETTINGS -->
+      <div class="app-screen" id="phone-size-settings">
+        <div class="statusbar" id="sb-phonesize"><span class="time" id="clk-phonesize">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div class="app-topbar"><span class="back-btn" onclick="openApp('settings')"><svg viewBox="0 0 11 18" fill="none"><path d="M10 1L2 9L10 17" stroke="#0a84ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Settings</span><h1 style="font-size:20px;">Phone Size</h1><span style="width:50px;"></span></div>
+        <div class="settings-list">
+          <div class="settings-group" style="margin-top:10px;">
+            <div style="padding:16px 14px;">
+              <div style="display:flex; justify-content:space-between; font-size:13px; color:#8e8e93; margin-bottom:10px;">
+                <span>Size</span>
+                <span id="phone-size-value">85%</span>
+              </div>
+              <input type="range" min="50" max="100" value="85" id="phone-size-range" style="width:100%;" oninput="phoneSizeChange(this.value)">
+              <div style="display:flex; justify-content:space-between; font-size:11px; color:#636366; margin-top:4px;">
+                <span>Smaller</span>
+                <span>Larger</span>
+              </div>
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-row" onclick="phoneSizeReset()">
               <span class="settings-icon" style="background:#ff453a;"><ion-icon name="refresh"></ion-icon></span>
               Reset to Default
             </div>
@@ -1360,75 +1309,217 @@ function checkCalendarReminders(){
 }
 setInterval(checkCalendarReminders, 15000);
 
-/* ========================= APP SWITCHER ========================= */
-let switcherOpen = false;
+/* ========================= GLOBAL KEYBOARD ========================= */
+const KB_LETTERS = [
+  ['q','w','e','r','t','y','u','i','o','p'],
+  ['a','s','d','f','g','h','j','k','l'],
+];
+const KB_LETTERS_LAST_ROW = ['z','x','c','v','b','n','m'];
+const KB_NUMBERS = [
+  ['1','2','3','4','5','6','7','8','9','0'],
+  ['-','/',':',';','(',')','$','&','@','"'],
+];
+const KB_NUMBERS_LAST_ROW = ['.',',','?','!',"'"];
+const KB_SYMBOLS = [
+  ['[',']','{','}','#','%','^','*','+','='],
+  ['_','\\','|','~','<','>','€','£','¥','·'],
+];
+const KB_SYMBOLS_LAST_ROW = ['.',',','?','!',"'"];
 
-function renderSwitcher(){
-  const track = document.getElementById('switcher-track');
-  track.innerHTML = '';
-  if(!appHistory.length){
-    track.innerHTML = '<div class="switcher-empty-hint">No recent apps yet — open something first.</div>';
-    return;
+let kbActiveEl = null;
+let kbLayer = 'letters'; // 'letters' | 'numbers' | 'symbols'
+let kbShift = false;
+
+function isTypableField(el){
+  if(!el) return false;
+  if(el.tagName === 'TEXTAREA') return true;
+  if(el.tagName === 'INPUT'){
+    const type = (el.getAttribute('type') || 'text').toLowerCase();
+    return ['text','search','url','email','tel'].includes(type);
   }
-  appHistory.forEach((appId, i)=>{
-    const meta = APP_META[appId];
-    if(!meta) return;
-    const wrap = document.createElement('div');
-    wrap.className = 'switcher-card-wrap';
-    wrap.dataset.app = appId;
-    wrap.style.zIndex = String(appHistory.length - i); // most recent (i=0) sits on top
-
-    const card = document.createElement('div');
-    card.className = 'switcher-card app-icon ' + meta.cls; // reuse existing background-image rule for a recognizable card bg
-
-    const label = document.createElement('div');
-    label.className = 'switcher-card-label';
-    label.innerHTML = `<ion-icon name="apps"></ion-icon><span>${meta.label}</span>`;
-
-    card.addEventListener('click', ()=>{
-      if(card.dataset.justSwiped) return;
-      closeSwitcher();
-      openApp(appId);
-    });
-    attachSwitcherCardSwipe(card, wrap, appId);
-    wrap.appendChild(card);
-    wrap.appendChild(label);
-    track.appendChild(wrap);
-  });
+  return false;
 }
 
-function attachSwitcherCardSwipe(card, wrap, appId){
-  let startY = 0, currentY = 0, dragging = false;
-  function pointY(e){ return (e.touches && e.touches[0]) ? e.touches[0].clientY : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : e.clientY); }
-  function onStart(e){ dragging = true; startY = pointY(e); currentY = startY; card.style.transition = 'none'; }
-  function onMove(e){
-    if(!dragging) return;
-    currentY = pointY(e);
-    const dy = Math.min(0, currentY - startY);
-    card.style.transform = `translateY(${dy}px)`;
-    card.style.opacity = String(Math.max(0.2, 1 - Math.abs(dy)/300));
+function showGlobalKeyboard(el){
+  kbActiveEl = el;
+  kbLayer = 'letters';
+  kbShift = false;
+  renderGlobalKeyboard();
+  document.getElementById('global-keyboard').classList.add('open');
+}
+function hideGlobalKeyboard(){
+  document.getElementById('global-keyboard').classList.remove('open');
+  kbActiveEl = null;
+}
+
+document.addEventListener('focusin', function(e){
+  if(isTypableField(e.target)){
+    showGlobalKeyboard(e.target);
   }
-  function onEnd(){
-    if(!dragging) return;
-    dragging = false;
-    card.style.transition = '';
-    const dy = currentY - startY;
-    if(dy < -110){
-      card.dataset.justSwiped = '1';
-      card.classList.add('flicking');
-      appHistory = appHistory.filter(a => a !== appId);
-      setTimeout(()=>{ wrap.remove(); if(!appHistory.length) renderSwitcher(); }, 220);
-    } else {
-      card.style.transform = '';
-      card.style.opacity = '';
+});
+document.addEventListener('focusout', function(e){
+  // Delay so a tap on a keyboard key (which prevents default blur-loss) doesn't cause a flicker,
+  // and so focus moving between two typable fields doesn't hide/show the keyboard unnecessarily.
+  setTimeout(()=>{
+    const active = document.activeElement;
+    if(!isTypableField(active)){
+      hideGlobalKeyboard();
     }
+  }, 60);
+});
+
+function kbInsertText(text){
+  const el = kbActiveEl;
+  if(!el) return;
+  const start = el.selectionStart != null ? el.selectionStart : el.value.length;
+  const end = el.selectionEnd != null ? el.selectionEnd : el.value.length;
+  const before = el.value.slice(0, start);
+  const after = el.value.slice(end);
+  el.value = before + text + after;
+  const newPos = start + text.length;
+  if(el.setSelectionRange) el.setSelectionRange(newPos, newPos);
+  el.dispatchEvent(new Event('input', {bubbles:true}));
+}
+function kbBackspace(){
+  const el = kbActiveEl;
+  if(!el) return;
+  const start = el.selectionStart != null ? el.selectionStart : el.value.length;
+  const end = el.selectionEnd != null ? el.selectionEnd : el.value.length;
+  let before, after, newPos;
+  if(start !== end){
+    before = el.value.slice(0, start);
+    after = el.value.slice(end);
+    newPos = start;
+  } else {
+    before = el.value.slice(0, Math.max(0, start - 1));
+    after = el.value.slice(start);
+    newPos = Math.max(0, start - 1);
   }
-  card.addEventListener('touchstart', onStart, {passive:true});
-  card.addEventListener('touchmove', onMove, {passive:true});
-  card.addEventListener('touchend', onEnd);
-  card.addEventListener('mousedown', onStart);
-  window.addEventListener('mousemove', (e)=>{ if(dragging) onMove(e); });
-  window.addEventListener('mouseup', onEnd);
+  el.value = before + after;
+  if(el.setSelectionRange) el.setSelectionRange(newPos, newPos);
+  el.dispatchEvent(new Event('input', {bubbles:true}));
+}
+function kbEnter(){
+  const el = kbActiveEl;
+  if(!el) return;
+  if(el.tagName === 'TEXTAREA'){
+    kbInsertText('\n');
+  } else {
+    el.dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', bubbles:true}));
+    el.blur();
+  }
+}
+
+function kbKeyMouseDown(e){
+  // Prevent the tap from stealing focus away from the active input
+  e.preventDefault();
+}
+
+function renderGlobalKeyboard(){
+  const kb = document.getElementById('global-keyboard');
+  kb.innerHTML = '';
+
+  if(kbLayer === 'letters'){
+    KB_LETTERS.forEach(chars=>{
+      const rowEl = document.createElement('div');
+      rowEl.className = 'gkb-row';
+      chars.forEach(c=>{
+        const ch = kbShift ? c.toUpperCase() : c;
+        const key = document.createElement('div');
+        key.className = 'gkb-key';
+        key.textContent = ch;
+        key.addEventListener('mousedown', kbKeyMouseDown);
+        key.addEventListener('click', ()=>{ kbInsertText(ch); if(kbShift){ kbShift = false; renderGlobalKeyboard(); } });
+        rowEl.appendChild(key);
+      });
+      kb.appendChild(rowEl);
+    });
+    const lastRow = document.createElement('div');
+    lastRow.className = 'gkb-row bottom-row';
+    const shift = document.createElement('div');
+    shift.className = 'gkb-key shift' + (kbShift ? ' active' : '');
+    shift.innerHTML = '<ion-icon name="arrow-up-outline"></ion-icon>';
+    shift.addEventListener('mousedown', kbKeyMouseDown);
+    shift.addEventListener('click', ()=>{ kbShift = !kbShift; renderGlobalKeyboard(); });
+    lastRow.appendChild(shift);
+    KB_LETTERS_LAST_ROW.forEach(c=>{
+      const ch = kbShift ? c.toUpperCase() : c;
+      const key = document.createElement('div');
+      key.className = 'gkb-key';
+      key.textContent = ch;
+      key.addEventListener('mousedown', kbKeyMouseDown);
+      key.addEventListener('click', ()=>{ kbInsertText(ch); if(kbShift){ kbShift = false; renderGlobalKeyboard(); } });
+      lastRow.appendChild(key);
+    });
+    const back = document.createElement('div');
+    back.className = 'gkb-key back';
+    back.innerHTML = '<ion-icon name="backspace-outline"></ion-icon>';
+    back.addEventListener('mousedown', kbKeyMouseDown);
+    back.addEventListener('click', kbBackspace);
+    lastRow.appendChild(back);
+    kb.appendChild(lastRow);
+  } else {
+    const rows = kbLayer === 'numbers' ? KB_NUMBERS : KB_SYMBOLS;
+    const lastRowChars = kbLayer === 'numbers' ? KB_NUMBERS_LAST_ROW : KB_SYMBOLS_LAST_ROW;
+    rows.forEach(chars=>{
+      const rowEl = document.createElement('div');
+      rowEl.className = 'gkb-row';
+      chars.forEach(c=>{
+        const key = document.createElement('div');
+        key.className = 'gkb-key';
+        key.textContent = c;
+        key.addEventListener('mousedown', kbKeyMouseDown);
+        key.addEventListener('click', ()=> kbInsertText(c));
+        rowEl.appendChild(key);
+      });
+      kb.appendChild(rowEl);
+    });
+    const lastRow = document.createElement('div');
+    lastRow.className = 'gkb-row bottom-row';
+    const switchLayerKey = document.createElement('div');
+    switchLayerKey.className = 'gkb-key shift';
+    switchLayerKey.textContent = kbLayer === 'numbers' ? '#+=' : '123';
+    switchLayerKey.addEventListener('mousedown', kbKeyMouseDown);
+    switchLayerKey.addEventListener('click', ()=>{ kbLayer = kbLayer === 'numbers' ? 'symbols' : 'numbers'; renderGlobalKeyboard(); });
+    lastRow.appendChild(switchLayerKey);
+    lastRowChars.forEach(c=>{
+      const key = document.createElement('div');
+      key.className = 'gkb-key';
+      key.textContent = c;
+      key.addEventListener('mousedown', kbKeyMouseDown);
+      key.addEventListener('click', ()=> kbInsertText(c));
+      lastRow.appendChild(key);
+    });
+    const back = document.createElement('div');
+    back.className = 'gkb-key back';
+    back.innerHTML = '<ion-icon name="backspace-outline"></ion-icon>';
+    back.addEventListener('mousedown', kbKeyMouseDown);
+    back.addEventListener('click', kbBackspace);
+    lastRow.appendChild(back);
+    kb.appendChild(lastRow);
+  }
+
+  const spaceRow = document.createElement('div');
+  spaceRow.className = 'gkb-row';
+  const modeToggle = document.createElement('div');
+  modeToggle.className = 'gkb-key wide';
+  modeToggle.textContent = kbLayer === 'letters' ? '123' : 'ABC';
+  modeToggle.addEventListener('mousedown', kbKeyMouseDown);
+  modeToggle.addEventListener('click', ()=>{ kbLayer = kbLayer === 'letters' ? 'numbers' : 'letters'; renderGlobalKeyboard(); });
+  spaceRow.appendChild(modeToggle);
+  const space = document.createElement('div');
+  space.className = 'gkb-key space';
+  space.textContent = ' ';
+  space.addEventListener('mousedown', kbKeyMouseDown);
+  space.addEventListener('click', ()=> kbInsertText(' '));
+  spaceRow.appendChild(space);
+  const enter = document.createElement('div');
+  enter.className = 'gkb-key wide';
+  enter.innerHTML = '<ion-icon name="return-down-back-outline"></ion-icon>';
+  enter.addEventListener('mousedown', kbKeyMouseDown);
+  enter.addEventListener('click', kbEnter);
+  spaceRow.appendChild(enter);
+  kb.appendChild(spaceRow);
 }
 
 /* ========================= SPOTLIGHT SEARCH ========================= */
@@ -1460,7 +1551,6 @@ function openSearch(){
   document.getElementById('search-input').value = '';
   renderSiriSuggestions();
   syncSearchClock();
-  buildSearchKeyboard();
   performSearch('');
   setTimeout(()=> document.getElementById('search-input').focus(), 300);
 }
@@ -1471,78 +1561,6 @@ function closeSearch(){
 }
 
 /* ---- On-screen keyboard (tap-to-insert, since this isn't a native input context) ---- */
-function buildSearchKeyboard(){
-  const kb = document.getElementById('search-keyboard');
-  if(kb.dataset.built) return;
-  kb.dataset.built = '1';
-  const rows = [
-    ['q','w','e','r','t','y','u','i','o','p'],
-    ['a','s','d','f','g','h','j','k','l'],
-  ];
-  kb.innerHTML = '';
-  rows.forEach(chars=>{
-    const rowEl = document.createElement('div');
-    rowEl.className = 'kb-row';
-    chars.forEach(c=>{
-      const key = document.createElement('div');
-      key.className = 'kb-key';
-      key.textContent = c;
-      key.addEventListener('click', ()=> insertSearchChar(c));
-      rowEl.appendChild(key);
-    });
-    kb.appendChild(rowEl);
-  });
-  const lastRow = document.createElement('div');
-  lastRow.className = 'kb-row bottom-row';
-  const shift = document.createElement('div');
-  shift.className = 'kb-key shift';
-  shift.innerHTML = '<ion-icon name="arrow-up-outline"></ion-icon>';
-  lastRow.appendChild(shift);
-  ['z','x','c','v','b','n','m'].forEach(c=>{
-    const key = document.createElement('div');
-    key.className = 'kb-key';
-    key.textContent = c;
-    key.addEventListener('click', ()=> insertSearchChar(c));
-    lastRow.appendChild(key);
-  });
-  const back = document.createElement('div');
-  back.className = 'kb-key back';
-  back.innerHTML = '<ion-icon name="backspace-outline"></ion-icon>';
-  back.addEventListener('click', ()=> deleteSearchChar());
-  lastRow.appendChild(back);
-  kb.appendChild(lastRow);
-
-  const spaceRow = document.createElement('div');
-  spaceRow.className = 'kb-row';
-  const nums = document.createElement('div');
-  nums.className = 'kb-key wide';
-  nums.textContent = '123';
-  spaceRow.appendChild(nums);
-  const space = document.createElement('div');
-  space.className = 'kb-key space';
-  space.textContent = ' ';
-  space.addEventListener('click', ()=> insertSearchChar(' '));
-  spaceRow.appendChild(space);
-  const search = document.createElement('div');
-  search.className = 'kb-key wide';
-  search.textContent = 'search';
-  search.addEventListener('click', ()=> document.getElementById('search-input').blur());
-  spaceRow.appendChild(search);
-  kb.appendChild(spaceRow);
-}
-function insertSearchChar(c){
-  const input = document.getElementById('search-input');
-  input.value += c;
-  input.focus();
-  performSearch(input.value);
-}
-function deleteSearchChar(){
-  const input = document.getElementById('search-input');
-  input.value = input.value.slice(0, -1);
-  input.focus();
-  performSearch(input.value);
-}
-
 /* Swipe down from the middle of the home screen to open Search */
 (function(){
   const screenEl = document.getElementById('screen');
@@ -1562,7 +1580,7 @@ function deleteSearchChar(){
     if(currentApp !== 'home') return;
     if(document.getElementById('lock-screen').classList.contains('open')) return;
     if(document.getElementById('control-center').classList.contains('open')) return;
-    if(searchOpen || switcherOpen) return;
+    if(searchOpen) return;
     const rect = screenEl.getBoundingClientRect();
     const p = pointFromEvent(e);
     const localY = p.y - rect.top;
@@ -1691,17 +1709,6 @@ function performSearch(query){
   container.appendChild(card);
 }
 
-function openSwitcher(){
-  switcherOpen = true;
-  renderSwitcher();
-  document.getElementById('app-switcher').classList.add('open');
-}
-function closeSwitcher(){
-  switcherOpen = false;
-  document.getElementById('app-switcher').classList.remove('open');
-}
-
-
 
 async function pSave(key, value){
   try{
@@ -1747,11 +1754,6 @@ let gridItems = [
 ];
 while(gridItems.length < GRID_SLOTS) gridItems.push({type:'empty'});
 
-let jiggleMode = false;
-let openFolderId = null;
-
-function makeFolderId(){ return 'folder_' + Date.now() + '_' + Math.floor(Math.random()*1000); }
-
 function renderCalendarIconContent(el){
   el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;"><div style="background:#ff453a;color:#fff;font-size:9px;font-weight:600;width:100%;text-align:center;border-radius:16px 16px 0 0;padding:2px 0;position:absolute;top:0;">${['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()]}</div><div style="font-size:26px;font-weight:500;color:#1c1c1e;margin-top:8px;">${new Date().getDate()}</div></div>`;
 }
@@ -1774,9 +1776,7 @@ function renderGrid(){
     wrap.className = 'app-icon-wrap';
     wrap.dataset.idx = idx;
 
-    if(item.type === 'empty'){
-      wrap.classList.add('empty-slot');
-    } else if(item.type === 'app'){
+    if(item.type === 'app'){
       const meta = APP_META[item.id];
       if(!meta){ wrap.classList.add('empty-slot'); grid.appendChild(wrap); return; }
       const iconEl = buildAppIconEl(item.id);
@@ -1785,175 +1785,19 @@ function renderGrid(){
       label.className = 'label';
       label.textContent = meta.label;
       wrap.appendChild(label);
-      wrap.addEventListener('click', function(){ if(!jiggleMode && !window.__gridDragJustHappened) openApp(item.id); });
-    } else if(item.type === 'folder'){
-      const iconEl = document.createElement('div');
-      iconEl.className = 'app-icon folder-icon';
-      item.apps.slice(0,4).forEach(appId=>{
-        const mini = document.createElement('div');
-        const meta = APP_META[appId];
-        mini.className = 'mini-icon app-icon' + (meta ? (' ' + meta.cls) : '');
-        if(appId === 'calendar') renderCalendarIconContent(mini);
-        iconEl.appendChild(mini);
-      });
-      wrap.appendChild(iconEl);
-      const label = document.createElement('span');
-      label.className = 'label';
-      label.textContent = item.name || 'Folder';
-      wrap.appendChild(label);
-      wrap.addEventListener('click', function(){ if(!jiggleMode && !window.__gridDragJustHappened) openFolderView(idx); });
+      wrap.addEventListener('click', function(){ openApp(item.id); });
+    } else {
+      // 'empty' slots, and any legacy 'folder' items from previously saved layouts, render as empty
+      wrap.classList.add('empty-slot');
     }
 
-    attachDragHandlers(wrap, idx);
     grid.appendChild(wrap);
   });
-  applyJiggleClass();
-}
-
-function applyJiggleClass(){
-  document.getElementById('app-grid').classList.toggle('jiggling', jiggleMode);
-  document.getElementById('done-editing-btn').classList.toggle('visible', jiggleMode);
-}
-
-function enterJiggleMode(){
-  jiggleMode = true;
-  applyJiggleClass();
-}
-function exitJiggleMode(){
-  jiggleMode = false;
-  applyJiggleClass();
-  pSaveGrid();
 }
 
 function pSaveGrid(){
   pSave('home-grid', gridItems);
 }
-
-/* ---- Long-press to enter jiggle mode, drag to reorder / merge into folders ---- */
-(function(){
-  let pressTimer = null;
-  let dragging = false;
-  window.__gridDragJustHappened = false;
-  let dragIdx = null;
-  let ghostEl = null;
-  let hoverIdx = null;
-  let startX = 0, startY = 0;
-  const LONG_PRESS_MS = 480;
-  const DRAG_START_DIST = 8;
-
-  function pointFromEvent(e){
-    if(e.touches && e.touches.length) return {x:e.touches[0].clientX, y:e.touches[0].clientY};
-    if(e.changedTouches && e.changedTouches.length) return {x:e.changedTouches[0].clientX, y:e.changedTouches[0].clientY};
-    return {x:e.clientX, y:e.clientY};
-  }
-
-  window.attachDragHandlers = function(wrap, idx){
-    if(gridItems[idx] && gridItems[idx].type === 'empty') return; // nothing to drag from an empty slot
-    wrap.addEventListener('touchstart', (e)=>onDragStart(e, wrap, idx), {passive:true});
-    wrap.addEventListener('mousedown', (e)=>onDragStart(e, wrap, idx));
-  };
-
-  function onDragStart(e, wrap, idx){
-    const p = pointFromEvent(e);
-    startX = p.x; startY = p.y;
-    clearTimeout(pressTimer);
-    if(jiggleMode){
-      beginDrag(wrap, idx, p);
-    } else {
-      pressTimer = setTimeout(()=>{
-        enterJiggleMode();
-        beginDrag(wrap, idx, p);
-      }, LONG_PRESS_MS);
-    }
-    window.addEventListener('touchmove', onDragMoveCheck, {passive:false});
-    window.addEventListener('mousemove', onDragMoveCheck);
-    window.addEventListener('touchend', onDragEndGlobal);
-    window.addEventListener('mouseup', onDragEndGlobal);
-  }
-
-  function onDragMoveCheck(e){
-    if(dragging){ onDragMove(e); return; }
-    const p = pointFromEvent(e);
-    const dist = Math.hypot(p.x-startX, p.y-startY);
-    if(dist > DRAG_START_DIST){
-      clearTimeout(pressTimer); // moved too much before long-press fired -> cancel long-press-to-jiggle, this was just a tap/scroll
-    }
-  }
-
-  function beginDrag(wrap, idx, p){
-    dragging = true;
-    dragIdx = idx;
-    wrap.classList.add('dragging');
-    ghostEl = wrap.cloneNode(true);
-    ghostEl.classList.add('drag-ghost');
-    ghostEl.classList.remove('dragging');
-    document.body.appendChild(ghostEl);
-    positionGhost(p);
-  }
-
-  function positionGhost(p){
-    if(!ghostEl) return;
-    ghostEl.style.left = (p.x - 30) + 'px';
-    ghostEl.style.top = (p.y - 30) + 'px';
-  }
-
-  function onDragMove(e){
-    if(!dragging) return;
-    const p = pointFromEvent(e);
-    positionGhost(p);
-    if(e.cancelable) e.preventDefault();
-    // find which slot we're hovering over
-    const el = document.elementFromPoint(p.x, p.y);
-    const wrapEl = el ? el.closest('.app-icon-wrap') : null;
-    document.querySelectorAll('.app-icon-wrap.folder-hover').forEach(w=>w.classList.remove('folder-hover'));
-    hoverIdx = null;
-    if(wrapEl && wrapEl.dataset.idx !== undefined){
-      hoverIdx = parseInt(wrapEl.dataset.idx);
-      if(hoverIdx !== dragIdx){
-        const target = gridItems[hoverIdx];
-        if(target && (target.type === 'app' || target.type === 'folder')){
-          wrapEl.classList.add('folder-hover');
-        }
-      }
-    }
-  }
-
-  function onDragEndGlobal(e){
-    clearTimeout(pressTimer);
-    window.removeEventListener('touchmove', onDragMoveCheck);
-    window.removeEventListener('mousemove', onDragMoveCheck);
-    window.removeEventListener('touchend', onDragEndGlobal);
-    window.removeEventListener('mouseup', onDragEndGlobal);
-    if(!dragging) return;
-    dragging = false;
-    window.__gridDragJustHappened = true;
-    setTimeout(()=>{ window.__gridDragJustHappened = false; }, 50);
-    if(ghostEl){ ghostEl.remove(); ghostEl = null; }
-    document.querySelectorAll('.app-icon-wrap.folder-hover').forEach(w=>w.classList.remove('folder-hover'));
-
-    if(hoverIdx !== null && hoverIdx !== dragIdx){
-      const source = gridItems[dragIdx];
-      const target = gridItems[hoverIdx];
-      if(target.type === 'app'){
-        // merge into a new folder
-        const folder = {type:'folder', id:makeFolderId(), name:'Folder', apps:[target.id, source.id]};
-        gridItems[hoverIdx] = folder;
-        gridItems[dragIdx] = {type:'empty'};
-      } else if(target.type === 'folder'){
-        target.apps.push(source.id);
-        gridItems[dragIdx] = {type:'empty'};
-      } else if(target.type === 'empty'){
-        gridItems[hoverIdx] = source;
-        gridItems[dragIdx] = {type:'empty'};
-      }
-      renderGrid();
-      pSaveGrid();
-    } else {
-      renderGrid();
-    }
-    dragIdx = null; hoverIdx = null;
-  }
-})();
 
 (async function loadGrid(){
   const saved = await pLoad('home-grid');
@@ -1964,83 +1808,13 @@ function pSaveGrid(){
   renderGrid();
 })();
 
-/* ---- Folder view ---- */
-function openFolderView(idx){
-  const item = gridItems[idx];
-  if(!item || item.type !== 'folder') return;
-  openFolderId = idx;
-  document.getElementById('folder-name-input').value = item.name || 'Folder';
-  renderFolderGrid();
-  document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('folder-view').classList.add('active');
-}
-function closeFolderView(){
-  openFolderId = null;
-  document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById('home').classList.add('active');
-  currentApp = 'home';
-  renderGrid();
-}
-function renderFolderGrid(){
-  const item = gridItems[openFolderId];
-  if(!item) return;
-  const grid = document.getElementById('folder-grid');
-  grid.innerHTML = '';
-  item.apps.forEach(appId=>{
-    const meta = APP_META[appId];
-    if(!meta) return;
-    const wrap = document.createElement('div');
-    wrap.className = 'app-icon-wrap';
-    const iconEl = buildAppIconEl(appId);
-    wrap.appendChild(iconEl);
-    const label = document.createElement('span');
-    label.className = 'label';
-    label.style.color = '#fff';
-    label.textContent = meta.label;
-    wrap.appendChild(label);
-    wrap.addEventListener('click', function(){
-      closeFolderView();
-      openApp(appId);
-    });
-    grid.appendChild(wrap);
-  });
-}
-function renameFolderLive(val){
-  const item = gridItems[openFolderId];
-  if(item){ item.name = val; pSaveGrid(); }
-}
-function deleteFolderKeepApps(){
-  const item = gridItems[openFolderId];
-  if(!item || item.type !== 'folder') return;
-  const idx = openFolderId;
-  const apps = item.apps;
-  gridItems[idx] = apps.length ? {type:'app', id:apps[0]} : {type:'empty'};
-  let remaining = apps.slice(1);
-  for(let i=0; i<gridItems.length && remaining.length; i++){
-    if(gridItems[i].type === 'empty'){
-      gridItems[i] = {type:'app', id: remaining.shift()};
-    }
-  }
-  closeFolderView();
-  pSaveGrid();
-}
-
 /* ========================= NAVIGATION ========================= */
 let currentApp = 'home';
-const SWITCHER_EXCLUDED = new Set(['home', 'note-editor', 'folder-view', 'wallpaper-settings', 'about', 'photo-viewer', 'reminder-detail']);
-let appHistory = []; // most recent first, real app ids only
-
-function trackAppHistory(id){
-  if(SWITCHER_EXCLUDED.has(id)) return;
-  appHistory = appHistory.filter(a => a !== id);
-  appHistory.unshift(id);
-}
 
 function openApp(id){
   document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   currentApp = id;
-  trackAppHistory(id);
   if(id==='weather' && !window.__wxLoaded){ loadWeather(); }
   if(id==='music' && !window.__musicRendered){ renderPlaylist(); }
   if(id==='wallpaper-settings' && typeof wpSyncPreview === 'function'){ wpSyncPreview(); }
@@ -2097,7 +1871,7 @@ function ccSyncMusic(){
 
   function onStart(e){
     if(document.getElementById('lock-screen').classList.contains('open')) return; // lock screen owns gestures while open
-    if(switcherOpen || searchOpen) return;
+    if(searchOpen) return;
     const rect = screenEl.getBoundingClientRect();
     const p = pointFromEvent(e);
     const localY = p.y - rect.top;
@@ -2209,7 +1983,7 @@ setInterval(updateLockClock, 1000*10);
     if(localY > TOP_ZONE) return;
     if(localX > rect.width * LEFT_ZONE_FRACTION) return;
     if(document.getElementById('control-center').classList.contains('open')) return;
-    if(switcherOpen || searchOpen) return;
+    if(searchOpen) return;
     mode = 'open';
     tracking = true;
     startY = p.y; currentY = p.y; startTime = Date.now();
@@ -2284,10 +2058,6 @@ setInterval(updateLockClock, 1000*10);
   const CLOSE_ZONE = 40; // px from bottom edge where a swipe-up-to-close can start
   const CLOSE_THRESHOLD = 100; // px dragged to trigger close
   const VELOCITY_THRESHOLD = 0.5; // px/ms
-  const HOLD_MIN_DY = 55; // must have dragged up at least this much before a "hold" counts
-  const HOLD_MS = 350; // how long the pause must last to trigger the switcher
-  let holdTimer = null;
-  let switcherTriggered = false;
 
   function screenHeight(){ return screenEl.getBoundingClientRect().height; }
 
@@ -2302,7 +2072,7 @@ setInterval(updateLockClock, 1000*10);
   function onStart(e){
     if(currentApp === 'home') return; // nothing to close from home
     if(document.getElementById('lock-screen').classList.contains('open')) return; // lock screen owns gestures while open
-    if(switcherOpen || searchOpen) return; // switcher/search own their own taps/swipes while open
+    if(searchOpen) return; // search owns its own taps/swipes while open
     const rect = screenEl.getBoundingClientRect();
     const p = pointFromEvent(e);
     const localY = p.y - rect.top;
@@ -2311,7 +2081,6 @@ setInterval(updateLockClock, 1000*10);
     activeEl = document.querySelector('.app-screen.active');
     if(!activeEl) return;
     tracking = true;
-    switcherTriggered = false;
     startY = p.y; startX = p.x; currentY = p.y;
     startTime = Date.now();
     activeEl.style.transition = 'none';
@@ -2320,39 +2089,6 @@ setInterval(updateLockClock, 1000*10);
     const homeEl = document.getElementById('home');
     homeEl.classList.add('active');
     homeEl.style.zIndex = '1';
-    resetHoldTimer();
-  }
-
-  function resetHoldTimer(){
-    clearTimeout(holdTimer);
-    const dy = Math.max(0, startY - currentY);
-    if(dy < HOLD_MIN_DY) return;
-    holdTimer = setTimeout(()=>{
-      if(!tracking || switcherTriggered) return;
-      switcherTriggered = true;
-      triggerSwitcherFromDrag();
-    }, HOLD_MS);
-  }
-
-  function triggerSwitcherFromDrag(){
-    tracking = false;
-    const el = activeEl;
-    activeEl = null;
-    const homeEl = document.getElementById('home');
-    if(el){
-      el.style.transition = 'transform .22s ease, opacity .22s ease';
-      el.style.transform = '';
-      el.style.opacity = '0';
-      setTimeout(()=>{
-        el.style.transition = 'none';
-        el.style.transform = '';
-        el.style.opacity = '';
-        el.style.borderRadius = '';
-        el.style.zIndex = '';
-        homeEl.style.zIndex = '';
-      }, 220);
-    }
-    openSwitcher();
   }
 
   function onMove(e){
@@ -2368,12 +2104,10 @@ setInterval(updateLockClock, 1000*10);
     activeEl.style.transform = `translateY(${translate}px) scale(${scale})`;
     activeEl.style.borderRadius = (10 + progress * 38) + 'px';
     activeEl.style.opacity = String(1 - progress * 0.35);
-    resetHoldTimer();
     if(e.cancelable) e.preventDefault();
   }
 
   function onEnd(){
-    clearTimeout(holdTimer);
     if(!tracking || !activeEl) return;
     tracking = false;
     const dy = Math.max(0, startY - currentY);
@@ -3035,6 +2769,29 @@ function wpSyncPreview(){
       currentWallpaperBlur = saved.blur;
       document.getElementById('home-wallpaper-layer').style.filter = `blur(${saved.blur}px)`;
     }
+  }
+})();
+
+/* ========================= PHONE SIZE ========================= */
+function phoneSizeChange(v){
+  document.documentElement.style.setProperty('--phone-scale-vh', v);
+  document.getElementById('phone-size-value').textContent = v + '%';
+  pSave('phone-size', parseInt(v));
+}
+function phoneSizeReset(){
+  document.documentElement.style.setProperty('--phone-scale-vh', 85);
+  document.getElementById('phone-size-range').value = 85;
+  document.getElementById('phone-size-value').textContent = '85%';
+  pSave('phone-size', 85);
+}
+(async function loadPhoneSize(){
+  const saved = await pLoad('phone-size');
+  if(saved && typeof saved === 'number'){
+    document.documentElement.style.setProperty('--phone-scale-vh', saved);
+    const rangeEl = document.getElementById('phone-size-range');
+    const valueEl = document.getElementById('phone-size-value');
+    if(rangeEl) rangeEl.value = saved;
+    if(valueEl) valueEl.textContent = saved + '%';
   }
 })();
 
