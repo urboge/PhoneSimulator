@@ -1,0 +1,3652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>iPhone Emulator</title>
+<script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+<style>
+  :root{
+    --bezel:#0a0a0c;
+    --screen:#000;
+    --ios-blue:#0a84ff;
+    --ios-green:#30d158;
+    --ios-red:#ff453a;
+    --ios-orange:#ff9f0a;
+    --ios-yellow:#ffd60a;
+    --ios-gray:#8e8e93;
+    --card-dark:#1c1c1e;
+    --card-dark2:#2c2c2e;
+    --sep-dark:rgba(255,255,255,0.12);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent; user-select:none;}
+  html,body{
+    height:100%; margin:0;
+    background:#000;
+    font-family:var(--font);
+    overflow:hidden;
+  }
+  .device-stage{
+    width:100vw; height:100dvh;
+    overflow:hidden;
+    position:relative;
+  }
+  .device-scale{
+    position:absolute; top:0; left:50%;
+    width:390px; height:844px;
+    transform-origin:top center;
+  }
+
+  /* ---------- Device shell (full-screen: no bezel) ---------- */
+  .device{
+    position:relative;
+    width:100%; height:100%;
+    background:var(--bezel);
+  }
+  .screen{
+    position:relative;
+    width:100%; height:100%;
+    background:var(--screen);
+    overflow:hidden;
+    color:#fff;
+  }
+  .di-wrap{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    z-index:9900; display:flex; align-items:center; gap:8px;
+    transition:top .38s cubic-bezier(.32,.9,0,1.1);
+  }
+  .dynamic-island{
+    width:126px; height:37px; background:#000; border-radius:20px;
+    box-shadow:0 0 0 1px rgba(255,255,255,0.04);
+    overflow:hidden; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:width .38s cubic-bezier(.32,.9,0,1.1), height .38s cubic-bezier(.32,.9,0,1.1), border-radius .38s cubic-bezier(.32,.9,0,1.1), top .38s cubic-bezier(.32,.9,0,1.1);
+  }
+  .dynamic-island.compact{
+    width:190px;
+  }
+  .dynamic-island.expanded{
+    width:340px; height:90px; border-radius:32px;
+  }
+  .di-wrap.has-expanded{ top:12px; }
+  .di-content{ display:flex; align-items:center; width:100%; height:100%; padding:0 12px; gap:8px; color:#fff; }
+  .dynamic-island:not(.compact):not(.expanded) .di-content{ display:none; }
+  .di-icon{ width:22px; height:22px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#333; }
+  .di-satellite{
+    width:37px; height:37px; background:#000; border-radius:50%; flex-shrink:0;
+    box-shadow:0 0 0 1px rgba(255,255,255,0.04);
+    display:none; align-items:center; justify-content:center; color:#fff; cursor:pointer;
+    position:relative; overflow:hidden;
+  }
+  .di-satellite.visible{ display:flex; }
+  .di-satellite ion-icon{ font-size:15px; }
+  .di-satellite-ring{
+    position:absolute; inset:2px; border-radius:50%;
+    background:conic-gradient(#ff9f0a var(--di-sat-pct, 0%), rgba(255,255,255,0.15) 0);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+    mask:radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+  }
+  .di-icon ion-icon{ font-size:13px; }
+  .di-compact-body{ flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .di-compact-text{ font-size:12px; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .di-eq{ display:flex; align-items:flex-end; gap:2px; height:14px; }
+  .di-eq span{ width:2.5px; background:var(--ios-green); border-radius:1px; animation:di-eq-bounce 0.9s ease-in-out infinite; }
+  .di-eq span:nth-child(1){ height:40%; animation-delay:0s; }
+  .di-eq span:nth-child(2){ height:100%; animation-delay:.15s; }
+  .di-eq span:nth-child(3){ height:65%; animation-delay:.3s; }
+  @keyframes di-eq-bounce{ 0%,100%{ transform:scaleY(0.4); } 50%{ transform:scaleY(1); } }
+  .dynamic-island:not(.compact) .di-eq{ display:none; }
+
+  .di-expanded-body{ display:none; flex:1; flex-direction:column; gap:6px; min-width:0; }
+  .dynamic-island.expanded .di-expanded-body{ display:flex; }
+  .dynamic-island.expanded .di-compact-body{ display:none; }
+  .di-expanded-top{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .di-expanded-title{ font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .di-expanded-sub{ font-size:11px; color:#8e8e93; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .di-expanded-controls{ display:flex; align-items:center; gap:14px; }
+  .di-expanded-controls ion-icon{ font-size:18px; color:#fff; cursor:pointer; }
+  .di-expanded-progress{ height:3px; background:rgba(255,255,255,0.2); border-radius:2px; overflow:hidden; margin-top:2px; }
+  .di-expanded-progress-fill{ height:100%; background:#fff; border-radius:2px; }
+
+  /* ---------- Status bar ---------- */
+  .statusbar{
+    position:absolute; top:0; left:0; right:0; height:47px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 24px; z-index:4000; pointer-events:none;
+    font-size:15px; font-weight:600; letter-spacing:-0.2px;
+  }
+  .statusbar .time{padding-top:2px;}
+  .statusbar .icons{display:flex; align-items:center; gap:5px; padding-top:2px;}
+  .statusbar.dark{color:#000;}
+  .sb-signal, .sb-wifi, .sb-batt{display:inline-flex; align-items:center;}
+  .sb-batt-body{width:22px; height:11px; border:1px solid currentColor; border-radius:3px; position:relative; padding:1.5px;}
+  .sb-batt-fill{background:currentColor; height:100%; width:80%; border-radius:1px;}
+  .sb-batt-tip{width:1.5px; height:4px; background:currentColor; margin-left:1px; border-radius:0 1px 1px 0;}
+
+  /* ---------- Spotlight Search ---------- */
+  .search-overlay{
+    position:absolute; inset:0; z-index:9550;
+    display:flex; flex-direction:column;
+    transform:translateY(-100%); opacity:0;
+    transition:transform .32s cubic-bezier(.32,.72,0,1), opacity .28s;
+    pointer-events:none;
+    overflow:hidden;
+  }
+  .search-overlay.open{ transform:translateY(0); opacity:1; pointer-events:auto; }
+  .search-bg-layer{
+    position:absolute; inset:-20px; z-index:0;
+    background: linear-gradient(160deg, #4a6cf7 0%, #7c5cf0 45%, #d94fa8 100%);
+    background-image: url('images/wallpaper/wallpaper.png'), linear-gradient(160deg, #4a6cf7 0%, #7c5cf0 45%, #d94fa8 100%);
+    background-size: cover; background-position: center; background-repeat: no-repeat;
+    filter: blur(24px) brightness(0.6);
+  }
+  .search-bg-scrim{ position:absolute; inset:0; z-index:0; background:rgba(0,0,0,0.25); }
+  .search-content{ position:relative; z-index:1; flex:1; display:flex; flex-direction:column; min-height:0; }
+
+  .search-status-row{
+    display:flex; justify-content:space-between; padding:14px 24px 0; color:#fff; font-size:15px; font-weight:600;
+  }
+  .search-suggestions-scroll{ flex:1; overflow-y:auto; padding:14px 16px 90px; }
+  .search-siri-title{ color:#fff; font-size:20px; font-weight:700; margin:6px 4px 10px; display:flex; justify-content:space-between; align-items:center;}
+  .search-siri-title span.show-more{ font-size:14px; font-weight:500; color:#c9a6ff; }
+  .siri-suggest-row{
+    display:flex; gap:22px; background:rgba(255,255,255,0.12); border-radius:18px; padding:16px 14px 12px;
+    overflow-x:auto;
+  }
+  .siri-suggest-item{ display:flex; flex-direction:column; align-items:center; gap:8px; flex-shrink:0; width:56px; }
+  .siri-suggest-item .app-icon{ width:56px; height:56px; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,0.3); }
+  .siri-suggest-item span{ font-size:11px; color:#fff; text-align:center; }
+
+  .search-group-card{
+    background:rgba(60,60,64,0.55); border-radius:16px; margin-top:14px; overflow:hidden;
+  }
+  .search-result-row{
+    display:flex; align-items:center; gap:12px; padding:12px 14px; cursor:pointer;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+  }
+  .search-result-row:last-child{ border-bottom:none; }
+  .search-result-row:active{ background:rgba(255,255,255,0.08); }
+  .search-result-icon{
+    width:38px; height:38px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:17px;
+    background:rgba(255,255,255,0.18);
+  }
+  .search-result-icon.app-icon{
+    border-radius:10px; background-size:cover; background-position:center; box-shadow:none;
+  }
+  .search-result-text{flex:1; min-width:0;}
+  .search-result-title{font-size:15px; color:#fff; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .search-result-sub{font-size:12px; color:rgba(235,235,245,0.6); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:1px;}
+  .search-result-chev{ color:rgba(235,235,245,0.3); font-size:16px; }
+
+  .search-bar-dock{
+    position:absolute; left:0; right:0; bottom:0; z-index:2;
+    background:#1c1c1e; border-top:1px solid rgba(255,255,255,0.08);
+    padding:8px 16px calc(env(safe-area-inset-bottom, 0px) + 6px);
+    transition:bottom .28s cubic-bezier(.32,.72,0,1);
+  }
+  .search-bar-dock.kb-open{ bottom:206px; }
+  .search-bar-row{
+    display:flex; align-items:center; gap:8px;
+  }
+  .search-input-wrap{
+    flex:1; display:flex; align-items:center; gap:8px; background:rgba(120,120,128,0.32);
+    border-radius:11px; padding:9px 10px;
+  }
+  .search-input-wrap ion-icon{color:#8e8e93; font-size:16px;}
+  .search-input-wrap input{
+    flex:1; background:transparent; border:none; outline:none; color:#fff; font-size:16px; caret-color:var(--ios-blue);
+  }
+  .search-input-wrap .search-mic{ color:#8e8e93; font-size:16px; }
+  .search-cancel{color:var(--ios-blue); font-size:16px; cursor:pointer; white-space:nowrap;}
+
+  .search-empty-hint{color:rgba(255,255,255,0.4); font-size:14px; text-align:center; padding:40px 20px;}
+
+  .notif-banner-stack{
+    position:absolute; top:60px; left:0; right:0; z-index:9700;
+    display:flex; flex-direction:column; align-items:center; gap:8px;
+    pointer-events:none;
+  }
+  .notif-banner{
+    width:calc(100% - 24px); max-width:358px;
+    background:#3a3a3e;
+    border-radius:16px; padding:11px 12px; display:flex; gap:10px; align-items:flex-start;
+    box-shadow:0 8px 24px rgba(0,0,0,0.35);
+    pointer-events:auto; cursor:pointer;
+    transform:translateY(-140%); opacity:0; transition:transform .35s cubic-bezier(.32,.72,0,1), opacity .3s;
+    touch-action:pan-x;
+  }
+  .notif-banner.visible{ transform:translateY(0); opacity:1; }
+  .notif-banner.dismissing{ transform:translateX(-120%) translateY(0) !important; opacity:0 !important; transition:transform .25s ease, opacity .25s; }
+  .notif-banner-icon{
+    width:34px; height:34px; border-radius:9px; flex-shrink:0; background-size:cover; background-position:center;
+    display:flex; align-items:center; justify-content:center; font-size:18px; color:#fff;
+  }
+  .notif-banner-body{flex:1; min-width:0;}
+  .notif-banner-app{font-size:12px; font-weight:600; color:rgba(255,255,255,0.6); text-transform:uppercase; letter-spacing:0.3px;}
+  .notif-banner-title{font-size:14px; font-weight:600; color:#fff; margin-top:1px;}
+  .notif-banner-text{font-size:13px; color:rgba(255,255,255,0.85); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .notif-banner-time{font-size:11px; color:rgba(255,255,255,0.5); flex-shrink:0; margin-top:1px;}
+
+  .lock-notif-stack{
+    position:absolute; top:236px; left:16px; right:16px; bottom:150px;
+    display:flex; flex-direction:column; gap:8px; overflow-y:auto;
+  }
+  .lock-notif{
+    background:#3a3a3e;
+    border-radius:16px; padding:0; display:flex; align-items:stretch;
+    position:relative; overflow:hidden; touch-action:pan-x;
+  }
+  .lock-notif-inner{display:flex; gap:10px; align-items:flex-start; flex:1; min-width:0; padding:11px 12px; transition:transform .2s ease; position:relative;}
+  .lock-notif.swiping .lock-notif-inner{ transition:none; }
+  .lock-notif.dismissing{ transition:opacity .2s ease, max-height .25s ease .1s, margin .25s ease .1s; opacity:0; max-height:0; margin:0; }
+
+  /* ---------- Lock Screen ---------- */
+  .lock-screen{
+    position:absolute; inset:0; z-index:9500;
+    background: linear-gradient(160deg, #4a6cf7 0%, #7c5cf0 45%, #d94fa8 100%);
+    background-image: url('images/wallpaper/wallpaper.png'), linear-gradient(160deg, #4a6cf7 0%, #7c5cf0 45%, #d94fa8 100%);
+    background-size: cover; background-position:center; background-repeat:no-repeat;
+    display:flex; flex-direction:column; align-items:center;
+    transform:translateY(-100%);
+    transition:transform .4s cubic-bezier(.32,.72,0,1);
+    pointer-events:none;
+  }
+  .lock-screen.open{ transform:translateY(0); pointer-events:auto; }
+  .lock-date{font-size:17px; font-weight:600; color:#fff; margin-top:64px; text-shadow:0 1px 8px rgba(0,0,0,0.25);}
+  .lock-time{font-size:88px; font-weight:600; color:#fff; margin-top:2px; line-height:1; letter-spacing:-1px; text-shadow:0 2px 12px rgba(0,0,0,0.25);}
+  .lock-icons{position:absolute; bottom:34px; left:0; right:0; display:flex; justify-content:space-between; align-items:center; padding:0 34px;}
+  .lock-icon-btn{
+    width:50px; height:50px; border-radius:50%; background:rgba(255,255,255,0.22); backdrop-filter:blur(10px);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .lock-icon-btn ion-icon{font-size:22px; color:#fff;}
+  .lock-hint{position:absolute; bottom:52px; left:0; right:0; text-align:center; color:#fff; font-size:14px; font-weight:500; text-shadow:0 1px 6px rgba(0,0,0,0.25);}
+
+  /* ---------- Control Center ---------- */
+  .control-center-backdrop{
+    position:absolute; inset:0; z-index:8900;
+    background:rgba(0,0,0,0.35);
+    opacity:0; pointer-events:none;
+    transition:opacity .3s ease;
+  }
+  .control-center-backdrop.visible{ opacity:1; pointer-events:auto; }
+  .control-center{
+    position:absolute; top:0; left:0; right:0; z-index:9000;
+    padding:54px 18px 20px;
+    transform:translateY(-100%);
+    transition:transform .35s cubic-bezier(.32,.72,0,1);
+    pointer-events:none;
+  }
+  .control-center.open{ transform:translateY(0); pointer-events:auto; }
+  .cc-card{
+    background:rgba(60,60,64,0.55);
+    backdrop-filter:blur(30px);
+    -webkit-backdrop-filter:blur(30px);
+    border-radius:22px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);
+  }
+  .cc-row{display:flex; gap:14px; margin-bottom:14px;}
+  /* Top-left 2x2 circular toggle card */
+  .cc-toggles{
+    width:150px; height:150px; display:grid; grid-template-columns:1fr 1fr; gap:14px;
+    padding:16px;
+  }
+  .cc-toggle-circle{
+    border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:rgba(120,120,128,0.32); cursor:pointer; transition:background .15s;
+  }
+  .cc-toggle-circle.on{background:#0a84ff;}
+  .cc-toggle-circle.on.cellular{background:#30d158;}
+  .cc-toggle-circle ion-icon{font-size:22px; color:#fff;}
+  /* Media / "Not Playing" card */
+  .cc-media{
+    flex:1; padding:14px; position:relative; display:flex; flex-direction:column; justify-content:space-between;
+  }
+  .cc-media-airplay{position:absolute; top:12px; right:12px; font-size:16px; color:rgba(255,255,255,0.6);}
+  .cc-media-title{font-size:16px; font-weight:600; color:#fff; margin-top:4px;}
+  .cc-media-artist{font-size:12px; color:rgba(255,255,255,0.65); margin-top:1px;}
+  .cc-media-controls{display:flex; align-items:center; justify-content:space-between; margin-top:auto;}
+  .cc-media-controls ion-icon{font-size:22px; color:#fff; cursor:pointer;}
+  .cc-media-controls ion-icon.play-btn{font-size:26px;}
+  /* Small square tiles (orientation lock, screen mirror) */
+  .cc-small-card{
+    flex:1; aspect-ratio:1; border-radius:18px; display:flex; align-items:center; justify-content:center;
+    background:rgba(60,60,64,0.55); backdrop-filter:blur(30px); cursor:pointer;
+  }
+  .cc-small-card ion-icon{font-size:22px; color:#fff;}
+  /* Brightness / volume vertical sliders */
+  .cc-sliders{display:flex; gap:10px; align-self:stretch;}
+  .cc-slider-card{
+    width:70px; border-radius:20px; position:relative; overflow:hidden;
+    background:rgba(60,60,64,0.55); backdrop-filter:blur(30px); cursor:pointer;
+  }
+  .cc-slider-fill{
+    position:absolute; left:0; right:0; bottom:0; background:rgba(255,255,255,0.95);
+    transition:height .15s;
+  }
+  .cc-slider-icon{position:absolute; bottom:12px; left:50%; transform:translateX(-50%); font-size:18px; color:rgba(0,0,0,0.6); z-index:2;}
+  /* Focus wide pill */
+  .cc-focus{
+    display:flex; align-items:center; gap:10px; padding:0 16px; flex:1;
+    background:rgba(60,60,64,0.55); backdrop-filter:blur(30px); border-radius:18px; cursor:pointer;
+  }
+  .cc-focus ion-icon{font-size:18px; color:#fff;}
+  .cc-focus span{font-size:14px; font-weight:500; color:#fff;}
+  /* Bottom row of 4 square tiles */
+  .cc-row-icons{display:flex; gap:10px;}
+  .cc-row-icons .cc-small-card{height:76px;}
+  .cc-handle{
+    width:36px; height:5px; background:rgba(255,255,255,0.4); border-radius:3px; margin:0 auto 14px;
+  }
+
+
+  .screens{position:absolute; inset:0;}
+  .app-screen{
+    position:absolute; inset:0;
+    display:none;
+    flex-direction:column;
+    animation: slideUp .32s cubic-bezier(.32,.72,0,1);
+  }
+  .app-screen.active{display:flex;}
+  @keyframes slideUp{ from{ transform:translateY(100%);} to{transform:translateY(0);} }
+
+  /* ---------- Home screen ---------- */
+  #home{
+    padding:56px 15px 0;
+    overflow:hidden;
+  }
+  #home.active{ display:flex; flex-direction:column; }
+  .home-wallpaper-layer{
+    position:absolute; inset:-20px; z-index:0;
+    background: linear-gradient(160deg, #4a6cf7 0%, #7c5cf0 45%, #d94fa8 100%);
+    background-image: url('images/wallpaper/wallpaper.png'), linear-gradient(160deg, #4a6cf7 0%, #7c5cf0 45%, #d94fa8 100%);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: blur(0px);
+    transition: filter .15s;
+  }
+  .home-widgets-row{
+    display:flex; gap:12px; padding-top:20px;
+  }
+  .home-widget{
+    flex:1; aspect-ratio:1; border-radius:22px; overflow:hidden; position:relative; cursor:pointer;
+    background:#3a3a3c;
+    padding:12px; display:flex; flex-direction:column; color:#fff;
+    box-shadow:0 4px 14px rgba(0,0,0,0.25);
+    transition:background .3s ease;
+  }
+  #hw-calendar{ background:#1c1c1e; }
+  #hw-weather.wx-clear{ background:linear-gradient(160deg, #4aa8ff, #1f6fe0); }
+  #hw-weather.wx-cloudy{ background:linear-gradient(160deg, #7a828c, #565d66); }
+  .hw-title-row{ display:flex; justify-content:space-between; align-items:flex-start; }
+  .hw-title{ font-size:12px; font-weight:600; color:rgba(255,255,255,0.75); }
+  .hw-icon{ font-size:15px; }
+  .hw-weather-temp{ font-size:34px; font-weight:300; margin-top:auto; line-height:1; }
+  .hw-weather-desc{ font-size:12px; color:rgba(255,255,255,0.7); margin-top:2px; }
+  .hw-weather-hilo{ font-size:11px; color:rgba(255,255,255,0.55); margin-top:1px; }
+  .hw-cal-date{ font-size:30px; font-weight:600; line-height:1; margin-top:2px; }
+  .hw-cal-weekday{ font-size:11px; color:#ff453a; font-weight:700; text-transform:uppercase; }
+  .hw-cal-events{ margin-top:auto; display:flex; flex-direction:column; gap:3px; }
+  .hw-cal-event-row{ font-size:11px; color:rgba(255,255,255,0.8); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; gap:5px; align-items:center; }
+  .hw-cal-event-dot{ width:5px; height:5px; border-radius:50%; background:var(--ios-blue); flex-shrink:0; }
+  .hw-cal-empty{ font-size:11px; color:rgba(255,255,255,0.4); margin-top:auto; }
+  .app-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 60px);
+    justify-content:space-between;
+    gap:16px 0;
+    padding-top:14px;
+  }
+  .app-icon-wrap{display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; width:60px;}
+  .app-icon-wrap.empty-slot{cursor:default; height:60px;}
+  .app-icon{
+    width:60px; height:60px; border-radius:16px;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 6px rgba(0,0,0,0.25);
+    position:relative;
+    background-size:cover; background-position:center; background-repeat:no-repeat;
+  }
+  .app-icon:active{transform:scale(0.9);}
+  .app-icon-wrap span.label{color:#fff; font-size:11px; font-weight:500; text-shadow:0 1px 2px rgba(0,0,0,0.3);}
+  .app-icon.calc{background-color:#1c1c1e; background-image:url('https://static.wikia.nocookie.net/logopedia/images/6/6c/Apple_Calculator_2025.png/revision/latest/scale-to-width-down/48?cb=20251104215141');}
+  .app-icon.notes{background-color:#ffb300; background-image:url('https://static.wikia.nocookie.net/logopedia/images/a/ac/Apple_Notes_2025.png/revision/latest/scale-to-width-down/48?cb=20251104221149');}
+  .app-icon.clock{background-color:#1c1c1e; overflow:hidden;}
+  .app-icon.weather{background-color:#1f6fe0; background-image:url('https://static.wikia.nocookie.net/logopedia/images/3/38/Apple_Weather_2025.png/revision/latest/scale-to-width-down/48?cb=20251104225359');}
+  .app-icon.calendar{background-color:#fff;}
+  .app-icon.music{background-color:#fa2d48; background-image:url('https://static.wikia.nocookie.net/logopedia/images/8/8b/Apple_Music_liquid_glass.png/revision/latest/scale-to-width-down/48?cb=20260625151153');}
+  .app-icon.safari{background-color:#0a84ff; background-image:url('https://static.wikia.nocookie.net/logopedia/images/7/73/Safari_2025.png/revision/latest/scale-to-width-down/48?cb=20251104204856');}
+  .app-icon.settings{background-color:#636366; background-image:url('https://static.wikia.nocookie.net/logopedia/images/9/95/Settings_iOS27.png/revision/latest/scale-to-width-down/48?cb=20260609174208');}
+  .app-icon.blink{background-color:#5e5ce6; background-image:url('images/app-icon/blink.png');}
+  .app-icon.photos{background-color:#fff; background-image:url('https://static.wikia.nocookie.net/logopedia/images/8/83/Apple_Photos_2025_III.png/revision/latest/scale-to-width-down/48?cb=20251104204247');}
+  .app-icon.reminders{background-color:#fff;}
+  .app-icon.camera{background-color:#1c1c1e; background-image:url('https://static.wikia.nocookie.net/logopedia/images/d/df/Camera_%28iOS%29_2025.png/revision/latest/scale-to-width-down/48?cb=20251104203428');}
+
+  .dock{
+    margin:0 0 10px; margin-top:auto;
+    background:rgba(255,255,255,0.18);
+    backdrop-filter:blur(20px);
+    border-radius:28px;
+    padding:14px 16px;
+    display:flex; justify-content:space-between;
+  }
+  /* ---------- Global Keyboard ---------- */
+  .global-keyboard{
+    position:absolute; left:0; right:0; bottom:0; z-index:9950;
+    background:#1c1c1e; border-top:1px solid rgba(255,255,255,0.08);
+    padding:8px 4px calc(env(safe-area-inset-bottom, 0px) + 6px);
+    display:flex; flex-direction:column; gap:8px;
+    transform:translateY(100%);
+    transition:transform .28s cubic-bezier(.32,.72,0,1);
+    pointer-events:none;
+  }
+  .global-keyboard.open{ transform:translateY(0); pointer-events:auto; }
+  .gkb-row{ display:flex; gap:6px; justify-content:center; padding:0 3px; }
+  .gkb-row.row-mid{ padding:0 18px; }
+  .gkb-key{
+    flex:1; max-width:34px; height:42px; background:#4a4a4c; border-radius:6px;
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:18px;
+    box-shadow:0 1px 0 rgba(0,0,0,0.4); cursor:pointer; user-select:none;
+  }
+  .gkb-key:active{ background:#6a6a6c; }
+  .gkb-key.wide{ max-width:none; flex:1.6; font-size:13px; background:#3a3a3c; }
+  .gkb-key.space{ max-width:none; flex:5; }
+  .gkb-key.shift, .gkb-key.back{ max-width:40px; flex:1.5; background:#3a3a3c; font-size:16px; }
+  .gkb-key.shift.active{ background:#e8e8e8; color:#000; }
+  .gkb-row.bottom-row{ align-items:center; }
+  .gkb-key.narrow{ max-width:26px; }
+
+  .home-indicator{
+    position:absolute; bottom:8px; left:50%; transform:translateX(-50%);
+    width:134px; height:5px; background:#fff; border-radius:3px; z-index:4000; opacity:0.9;
+  }
+  #home .home-indicator{background:#fff;}
+  .app-screen .home-indicator.dark-ind{background:#000;}
+
+  /* ---------- App top bar (generic) ---------- */
+  .app-topbar{
+    padding:58px 16px 10px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+  }
+  .app-topbar h1{font-size:28px; font-weight:700; margin:0;}
+  .back-btn{
+    display:flex; align-items:center; gap:2px; color:var(--ios-blue); font-size:17px; cursor:pointer; padding:6px 0;
+  }
+  .back-btn svg{width:11px; height:18px;}
+
+  /* ================= CALCULATOR ================= */
+  #calc{background:#000;}
+  .calc-display{
+    flex:1; display:flex; align-items:flex-end; justify-content:flex-end;
+    padding:0 24px 10px; font-size:80px; font-weight:200; color:#fff; overflow:hidden;
+    white-space:nowrap;
+  }
+  .calc-pad{padding:0 12px 30px; display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+  .calc-btn{
+    height:76px; border-radius:50%; border:none; font-size:32px; font-weight:400;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .calc-btn.num{background:#333; color:#fff;}
+  .calc-btn.num:active{background:#555;}
+  .calc-btn.op{background:#ff9f0a; color:#fff; font-size:38px;}
+  .calc-btn.op:active{background:#ffc16b;}
+  .calc-btn.op.active-op{background:#fff; color:#ff9f0a;}
+  .calc-btn.fn{background:#a5a5a5; color:#000;}
+  .calc-btn.fn:active{background:#d1d1d1;}
+  .calc-btn.zero{grid-column:span 2; border-radius:38px; justify-content:flex-start; padding-left:28px;}
+
+  /* ================= NOTES ================= */
+  #notes{background:#000;}
+  .notes-list{flex:1; overflow-y:auto; padding:0 16px 34px;}
+  .note-row{
+    padding:14px 4px; border-bottom:1px solid var(--sep-dark); cursor:pointer;
+  }
+  .note-row .nt{font-size:17px; font-weight:600; color:#fff; margin-bottom:3px;}
+  .note-row .nm{font-size:15px; color:#8e8e93; display:flex; gap:6px;}
+  .notes-fab{
+    position:absolute; bottom:30px; right:20px; width:50px; height:50px; border-radius:50%;
+    background:var(--ios-yellow); display:flex; align-items:center; justify-content:center;
+    font-size:26px; color:#000; box-shadow:0 4px 10px rgba(0,0,0,0.4); cursor:pointer;
+  }
+  #note-editor{background:#000; display:none;}
+  #note-editor.active{display:flex;}
+  .note-edit-bar{padding:58px 16px 10px; display:flex; justify-content:space-between; align-items:center;}
+  #note-editor textarea{
+    flex:1; background:transparent; border:none; color:#fff; font-size:17px; padding:0 16px 34px;
+    outline:none; resize:none; font-family:var(--font); line-height:1.4;
+  }
+
+  /* ================= CLOCK ================= */
+  #clock{background:#000;}
+  .clock-tabs{display:flex; justify-content:space-around; padding:8px 0 24px; border-top:1px solid var(--sep-dark); background:#1c1c1e;}
+  .clock-tab{color:var(--ios-gray); font-size:10px; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;}
+  .clock-tab.active{color:var(--ios-orange);}
+  .clock-tab svg{width:24px; height:24px;}
+  .clock-body{flex:1; display:none; flex-direction:column; align-items:center; padding-top:40px; overflow-y:auto;}
+  .clock-body.active{display:flex;}
+  .big-time{font-size:64px; font-weight:200; margin:20px 0 6px; font-variant-numeric:tabular-nums;}
+  .big-date{color:#8e8e93; font-size:17px;}
+  .world-clock-row{width:100%; padding:14px 20px; border-bottom:1px solid var(--sep-dark); display:flex; justify-content:space-between; align-items:center;}
+  .wc-city{font-size:16px;}
+  .wc-diff{font-size:13px; color:#8e8e93;}
+  .wc-time{font-size:34px; font-weight:200; font-variant-numeric:tabular-nums;}
+  .timer-display{font-size:70px; font-weight:200; font-variant-numeric:tabular-nums; margin:30px 0;}
+  .timer-controls{display:flex; gap:20px;}
+  .timer-btn{
+    width:80px; height:80px; border-radius:50%; border:none; font-size:16px; cursor:pointer;
+  }
+  .timer-btn.start{background:rgba(48,209,88,0.2); color:var(--ios-green);}
+  .timer-btn.stop{background:rgba(255,69,58,0.2); color:var(--ios-red);}
+  .timer-btn.reset{background:#3a3a3c; color:#fff;}
+  .stopwatch-laps{width:100%; padding:10px 24px; overflow-y:auto;}
+  .lap-row{display:flex; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--sep-dark); font-size:15px; color:#fff; font-variant-numeric:tabular-nums;}
+
+  /* ================= WEATHER ================= */
+  #weather{background:linear-gradient(180deg,#4a90d9,#1a5fb4 60%, #0d3d80);}
+  .wx-top{padding:10px 20px 10px; text-align:center;}
+  .wx-city{font-size:30px; font-weight:400;}
+  .wx-temp{font-size:88px; font-weight:200; margin:0;}
+  .wx-desc{font-size:19px; margin-top:-8px;}
+  .wx-hilo{font-size:17px; color:rgba(255,255,255,0.85);}
+  .wx-search{margin:63px 20px 6px; display:flex; gap:8px;}
+  #wx-content{flex:1; display:flex; flex-direction:column; min-height:0; overflow-y:auto;}
+  .wx-search input{
+    flex:1; background:rgba(255,255,255,0.2); border:none; border-radius:10px; padding:10px 14px;
+    color:#fff; font-size:15px; outline:none;
+  }
+  .wx-search input::placeholder{color:rgba(255,255,255,0.7);}
+  .wx-search button{background:rgba(255,255,255,0.25); border:none; border-radius:10px; padding:0 16px; color:#fff; font-size:14px; cursor:pointer;}
+  .wx-hourly{
+    margin:18px 16px 0; background:rgba(255,255,255,0.15); backdrop-filter:blur(10px);
+    border-radius:16px; padding:14px 8px; display:flex; overflow-x:auto; gap:20px;
+  }
+  .wx-hour{display:flex; flex-direction:column; align-items:center; gap:8px; font-size:13px; min-width:36px;}
+  .wx-daily{
+    margin:14px 16px 34px; background:rgba(255,255,255,0.15); backdrop-filter:blur(10px);
+    border-radius:16px; padding:6px 16px; flex:1; overflow-y:auto;
+  }
+  .wx-day-row{display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.15); font-size:15px;}
+  .wx-day-row:last-child{border-bottom:none;}
+  .wx-day-name{width:70px;}
+  .wx-loading{padding:80px 20px; text-align:center; color:rgba(255,255,255,0.8);}
+
+  /* ================= CALENDAR ================= */
+  #calendar{background:#000;}
+  .cal-topbar{padding:58px 16px 6px;}
+  .cal-month-label{font-size:15px; color:var(--ios-red); font-weight:600;}
+  .cal-year-title{font-size:30px; font-weight:700; margin-top:2px;}
+  .cal-weekdays{display:grid; grid-template-columns:repeat(7,1fr); text-align:center; color:#8e8e93; font-size:11px; padding:12px 4px 6px;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; padding:0 4px; flex-shrink:0;}
+  .cal-day{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; cursor:pointer; position:relative;
+  }
+  .cal-day.muted{color:#3a3a3c;}
+  .cal-day.today .num-circle{background:var(--ios-red); border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center;}
+  .cal-day.selected .num-circle{background:#fff; color:#000; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center;}
+  .cal-day .dot{position:absolute; bottom:2px; width:4px; height:4px; background:var(--ios-red); border-radius:50%;}
+  .cal-events{flex:1; overflow-y:auto; padding:16px 16px 34px; border-top:1px solid var(--sep-dark); margin-top:10px;}
+  .cal-events h3{font-size:13px; color:#8e8e93; text-transform:uppercase; margin:6px 0 10px;}
+  .cal-event-row{display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--sep-dark); align-items:center;}
+  .cal-event-dot{width:6px; height:6px; border-radius:50%; background:var(--ios-blue); flex-shrink:0;}
+  .cal-event-title{font-size:15px;}
+  .cal-event-time{font-size:13px; color:#8e8e93;}
+  .cal-add-row{display:flex; gap:8px; margin-top:10px;}
+  .cal-add-row input{flex:1; background:#1c1c1e; border:none; border-radius:8px; padding:10px; color:#fff; font-size:14px; outline:none;}
+  .cal-add-row button{background:var(--ios-blue); border:none; border-radius:8px; padding:0 14px; color:#fff; cursor:pointer;}
+
+  /* ================= MUSIC ================= */
+  #music{background:linear-gradient(180deg,#2a1a3e,#0a0a12);}
+  .music-body{flex:1; display:flex; flex-direction:column; align-items:center; padding:80px 30px 34px; overflow-y:auto; min-height:0;}
+  .album-art{
+    width:280px; height:280px; border-radius:12px; margin-bottom:30px;
+    background:linear-gradient(135deg,#ff5e7e,#ff9f0a 50%, #ffd60a);
+    display:flex; align-items:center; justify-content:center; font-size:80px;
+    box-shadow:0 20px 40px rgba(0,0,0,0.5);
+  }
+  .music-title{font-size:20px; font-weight:600; margin-bottom:2px; text-align:center;}
+  .music-artist{font-size:15px; color:#a1a1a6; margin-bottom:24px;}
+  .music-progress{width:100%; height:4px; background:#3a3a3c; border-radius:2px; margin-bottom:6px; position:relative; cursor:pointer;}
+  .music-progress-fill{height:100%; background:#fff; border-radius:2px; width:0%;}
+  .music-times{display:flex; justify-content:space-between; font-size:11px; color:#8e8e93; width:100%; margin-bottom:26px;}
+  .music-controls{display:flex; align-items:center; gap:36px; margin-bottom:30px;}
+  .music-controls svg{width:26px; height:26px; fill:#fff; cursor:pointer;}
+  .music-play{width:66px; height:66px; display:flex; align-items:center; justify-content:center;}
+  .music-play svg{width:34px; height:34px;}
+  .music-vol{display:flex; align-items:center; gap:10px; width:100%;}
+  .music-vol input{flex:1;}
+  .music-playlist{width:100%; margin-top:20px;}
+  .music-track-row{display:flex; justify-content:space-between; padding:10px 4px; border-bottom:1px solid var(--sep-dark); font-size:14px; cursor:pointer;}
+  .music-track-row.playing{color:var(--ios-red);}
+
+  /* ================= SAFARI (browser) ================= */
+  #safari{background:#f2f2f7; color:#000;}
+  /* ================= BLINK ================= */
+  #blink{background:#1c1c1e;}
+  /* ================= PHOTOS ================= */
+  #photos{background:#000;}
+  .photos-grid{
+    flex:1; overflow-y:auto; padding:2px; display:grid; grid-template-columns:repeat(4, 1fr); gap:2px; align-content:start;
+  }
+  .photos-empty-hint{grid-column:1/-1; color:#8e8e93; font-size:14px; text-align:center; padding:60px 20px;}
+  .photo-thumb{ aspect-ratio:1; background-size:cover; background-position:center; cursor:pointer; }
+  #photo-viewer{background:#000; justify-content:center; align-items:center; position:relative;}
+  .photo-viewer-backdrop{position:absolute; inset:0; background:#000;}
+  .photo-viewer-top{
+    position:absolute; top:54px; left:16px; right:16px; z-index:2; display:flex; justify-content:space-between;
+    font-size:24px; color:#fff;
+  }
+  .photo-viewer-img{ position:relative; z-index:1; max-width:100%; max-height:100%; object-fit:contain; }
+  /* ================= CAMERA ================= */
+  #camera{background:#000; position:relative;}
+  .camera-viewport{position:absolute; inset:0; overflow:hidden; background:#000;}
+  .camera-viewport video{width:100%; height:100%; object-fit:cover;}
+  .camera-flash-overlay{position:absolute; inset:0; background:#fff; opacity:0; pointer-events:none;}
+  .camera-flash-overlay.flashing{ animation:camera-flash .35s ease; }
+  @keyframes camera-flash{ 0%{opacity:0;} 15%{opacity:1;} 100%{opacity:0;} }
+  .camera-permission-msg{
+    position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    color:#fff; font-size:14px; text-align:center; padding:0 40px; background:#000;
+  }
+  .camera-permission-msg.visible{ display:flex; }
+  .camera-retry-btn{ background:#0a84ff; color:#fff; padding:8px 18px; border-radius:10px; font-size:14px; cursor:pointer; margin-top:6px; }
+  .camera-top-bar{
+    position:absolute; top:54px; left:20px; right:20px; z-index:5; display:flex; justify-content:space-between;
+    font-size:24px; color:#fff;
+  }
+  .camera-top-bar ion-icon{ cursor:pointer; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.5)); }
+  .camera-bottom-bar{
+    position:absolute; bottom:38px; left:0; right:0; z-index:5; display:flex; align-items:center; justify-content:space-between;
+    padding:0 34px;
+  }
+  .camera-last-thumb{
+    width:48px; height:48px; border-radius:10px; background-size:cover; background-position:center;
+    background-color:#2c2c2e; border:2px solid rgba(255,255,255,0.5); cursor:pointer;
+  }
+  .camera-shutter-btn{
+    width:72px; height:72px; border-radius:50%; background:#fff; padding:4px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .camera-shutter-inner{ width:100%; height:100%; border-radius:50%; background:#fff; border:2px solid #000; transition:transform .1s; }
+  .camera-shutter-btn:active .camera-shutter-inner{ transform:scale(0.85); }
+  .camera-flip-btn{
+    width:48px; height:48px; border-radius:50%; background:rgba(60,60,64,0.6); display:flex; align-items:center; justify-content:center;
+    color:#fff; font-size:22px; cursor:pointer;
+  }
+  /* ================= REMINDERS ================= */
+  #reminders{background:#000;}
+  .rem-lists-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 16px 8px; }
+  .rem-smart-card{
+    background:#1c1c1e; border-radius:14px; padding:12px; cursor:pointer; min-height:78px;
+    display:flex; flex-direction:column; justify-content:space-between;
+  }
+  .rem-smart-card .top-row{ display:flex; justify-content:space-between; align-items:flex-start; }
+  .rem-smart-card ion-icon{ font-size:26px; }
+  .rem-smart-card .count{ font-size:22px; font-weight:700; color:#fff; }
+  .rem-smart-card .label{ font-size:14px; color:#fff; margin-top:2px; }
+  .rem-mylists-row{
+    display:flex; justify-content:space-between; align-items:center; padding:18px 16px 6px; font-size:13px; color:#8e8e93; text-transform:uppercase;
+  }
+  .rem-add-list-btn{ color:var(--ios-blue); text-transform:none; font-size:14px; cursor:pointer; display:flex; align-items:center; gap:4px; }
+  .rem-mylists{ flex:1; overflow-y:auto; padding:0 16px 34px; }
+  .rem-list-row{
+    display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid var(--sep-dark); cursor:pointer;
+  }
+  .rem-list-dot{ width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:15px; flex-shrink:0; }
+  .rem-list-name{ flex:1; font-size:16px; color:#fff; }
+  .rem-list-count{ color:#8e8e93; font-size:16px; }
+  .rem-detail-title{ font-size:30px; font-weight:700; padding:6px 16px 14px; margin:0; }
+  .rem-items-list{ flex:1; overflow-y:auto; padding:0 16px; }
+  .rem-item-row{ display:flex; align-items:center; gap:12px; padding:11px 2px; border-bottom:1px solid var(--sep-dark); }
+  .rem-check{ width:23px; height:23px; border-radius:50%; border:1.8px solid #8e8e93; flex-shrink:0; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .rem-check.done{ background:var(--ios-blue); border-color:var(--ios-blue); }
+  .rem-check.done ion-icon{ color:#fff; font-size:14px; }
+  .rem-item-text{ flex:1; font-size:16px; color:#fff; }
+  .rem-item-text.done{ color:#8e8e93; text-decoration:line-through; }
+  .rem-add-row{ display:flex; align-items:center; gap:10px; padding:12px 20px 24px; }
+  .rem-add-row input{ flex:1; background:transparent; border:none; outline:none; color:#fff; font-size:16px; }
+  .blink-frame-wrap{flex:1; position:relative; background:#1c1c1e; padding:54px 0 34px; box-sizing:border-box;}
+  .blink-frame-wrap iframe{width:100%; height:100%; border:none; border-radius:0;}
+  .safari-bar{
+    padding:54px 12px 8px; display:flex; gap:8px; align-items:center; background:rgba(255,255,255,0.9);
+  }
+  .safari-url{
+    flex:1; background:#e5e5ea; border-radius:10px; padding:8px 12px; font-size:14px; display:flex; align-items:center; gap:6px; color:#000;
+  }
+  .safari-url input{border:none; background:transparent; outline:none; flex:1; font-size:14px;}
+  .safari-go{color:var(--ios-blue); font-size:15px; cursor:pointer; padding:4px 6px;}
+  .safari-frame-wrap{flex:1; position:relative; background:#fff; min-height:0; overflow-y:auto;}
+  .safari-frame-wrap iframe{width:100%; height:100%; border:none;}
+  .safari-start{padding:20px 20px 34px; overflow-y:auto;}
+  .safari-start h3{font-size:13px; color:#8e8e93; text-transform:uppercase; margin:16px 0 10px;}
+  .safari-favs{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+  .safari-fav{display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer;}
+  .safari-fav-icon{width:52px; height:52px; border-radius:12px; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; font-size:22px;}
+  .safari-fav span{font-size:11px; color:#000;}
+  .safari-note{margin:16px; padding:12px 14px; background:#fff; border-radius:12px; font-size:13px; color:#555; line-height:1.4;}
+
+  /* ================= SETTINGS ================= */
+  #settings{background:#000;}
+  .settings-list{flex:1; overflow-y:auto; padding:0 16px 34px;}
+  .settings-group{background:#1c1c1e; border-radius:14px; margin-bottom:20px; overflow:hidden;}
+  .settings-row{display:flex; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid #2c2c2e; font-size:16px;}
+  .settings-row:last-child{border-bottom:none;}
+  .settings-icon{width:30px; height:30px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; flex-shrink:0;}
+  .settings-icon ion-icon{font-size:18px; color:#fff;}
+  .settings-row .chev{margin-left:auto; color:#48484a; font-size:14px;}
+  .settings-toggle{margin-left:auto; width:51px; height:31px; border-radius:16px; background:#39393d; position:relative; cursor:pointer; flex-shrink:0;}
+  .settings-toggle.on{background:var(--ios-green);}
+  .settings-toggle .knob{position:absolute; top:2px; left:2px; width:27px; height:27px; background:#fff; border-radius:50%; transition:left .2s; box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+  .settings-toggle.on .knob{left:22px;}
+  .about-row{display:flex; justify-content:space-between; padding:12px 14px; border-bottom:1px solid #2c2c2e; font-size:15px; color:#fff;}
+  .about-row span:last-child{color:#8e8e93;}
+  /* ================= WALLPAPER SETTINGS ================= */
+  .wp-preview-wrap{display:flex; justify-content:center; padding:10px 0 4px;}
+  .wp-preview{
+    width:130px; height:281px; border-radius:22px; overflow:hidden; position:relative;
+    box-shadow:0 0 0 4px #1c1c1e, 0 8px 20px rgba(0,0,0,0.4);
+  }
+  .wp-preview-blur{
+    position:absolute; inset:-10px;
+    background: linear-gradient(160deg, #4a6cf7 0%, #7c5cf0 45%, #d94fa8 100%);
+    background-size:cover; background-position:center;
+    filter:blur(0px); transition:filter .15s;
+  }
+
+  /* Scrollbar hide */
+  ::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+
+<div class="device-stage">
+<div class="device-scale">
+<div class="device">
+  <div class="screen" id="screen">
+    <div class="di-wrap" id="di-wrap">
+      <div class="dynamic-island" id="dynamic-island">
+        <div class="di-content" id="di-content">
+          <div class="di-icon" id="di-icon"><ion-icon name="timer-outline"></ion-icon></div>
+          <div class="di-compact-body" id="di-compact-body">
+            <span class="di-compact-text" id="di-compact-text"></span>
+            <div class="di-eq" id="di-eq"><span></span><span></span><span></span></div>
+          </div>
+          <div class="di-expanded-body" id="di-expanded-body">
+            <div class="di-expanded-top">
+              <div style="min-width:0;">
+                <div class="di-expanded-title" id="di-expanded-title"></div>
+                <div class="di-expanded-sub" id="di-expanded-sub"></div>
+              </div>
+              <div class="di-expanded-controls" id="di-expanded-controls"></div>
+            </div>
+            <div class="di-expanded-progress"><div class="di-expanded-progress-fill" id="di-expanded-progress-fill" style="width:0%;"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="di-satellite" id="di-satellite">
+        <div class="di-satellite-ring" id="di-satellite-ring"></div>
+        <ion-icon id="di-satellite-icon" name="timer-outline" style="color:#ff9f0a; position:relative; z-index:1;"></ion-icon>
+      </div>
+    </div>
+
+    <div class="lock-screen" id="lock-screen">
+      <div class="statusbar" id="sb-lock"><span class="time" id="clk-lock">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 10.5a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4zM4.6 7.4a5 5 0 016.8 0 .6.6 0 00.85-.85 6.2 6.2 0 00-8.5 0 .6.6 0 00.85.85zM2.2 4.7a8.9 8.9 0 0111.6 0 .6.6 0 10.8-.9 10.1 10.1 0 00-13.2 0 .6.6 0 10.8.9z" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span><span class="sb-batt-tip"></span></span></span></div>
+      <div class="lock-date" id="lock-date">Sunday, August 23</div>
+      <div class="lock-time" id="lock-time">9:41</div>
+      <div class="lock-notif-stack" id="lock-notif-stack"></div>
+      <div class="lock-icons">
+        <div class="lock-icon-btn"><ion-icon name="flashlight" style="transform:rotate(-45deg);"></ion-icon></div>
+        <div class="lock-icon-btn"><ion-icon name="camera"></ion-icon></div>
+      </div>
+      <div class="lock-hint">Swipe up to unlock</div>
+    </div>
+
+    <div class="notif-banner-stack" id="notif-banner-stack"></div>
+
+    <div class="global-keyboard" id="global-keyboard"></div>
+
+    <div class="search-overlay" id="search-overlay">
+      <div class="search-bg-layer"></div>
+      <div class="search-bg-scrim"></div>
+      <div class="search-content">
+        <div class="search-status-row">
+          <span id="search-clock">9:41</span>
+          <span style="display:flex; align-items:center; gap:5px;">
+            <ion-icon name="cellular"></ion-icon>
+            <ion-icon name="wifi"></ion-icon>
+            <ion-icon name="battery-full"></ion-icon>
+          </span>
+        </div>
+        <div class="search-suggestions-scroll" id="search-suggestions-scroll">
+          <div class="search-siri-title"><span>Siri Suggestions</span></div>
+          <div class="siri-suggest-row" id="siri-suggest-row"></div>
+        </div>
+      </div>
+      <div class="search-bar-dock" id="search-bar-dock">
+        <div class="search-bar-row">
+          <div class="search-input-wrap">
+            <ion-icon name="search"></ion-icon>
+            <input type="text" id="search-input" placeholder="Search" autocomplete="off" oninput="performSearch(this.value)">
+            <ion-icon class="search-mic" name="mic"></ion-icon>
+          </div>
+          <span class="search-cancel" onclick="closeSearch()">Cancel</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-center-backdrop" id="cc-backdrop" onclick="closeControlCenter()"></div>
+    <div class="control-center" id="control-center">
+      <div class="cc-handle"></div>
+
+      <div class="cc-row">
+        <div class="cc-card cc-toggles">
+          <div class="cc-toggle-circle on" id="cc-airplane" onclick="ccToggle(this)"><ion-icon name="airplane"></ion-icon></div>
+          <div class="cc-toggle-circle on cellular" id="cc-cellular" onclick="ccToggle(this)"><ion-icon name="cellular"></ion-icon></div>
+          <div class="cc-toggle-circle on" id="cc-wifi" onclick="ccToggle(this)"><ion-icon name="wifi"></ion-icon></div>
+          <div class="cc-toggle-circle on" id="cc-bluetooth" onclick="ccToggle(this)"><ion-icon name="bluetooth"></ion-icon></div>
+        </div>
+        <div class="cc-card cc-media">
+          <ion-icon class="cc-media-airplay" name="wifi-outline"></ion-icon>
+          <div>
+            <div class="cc-media-title" id="cc-mini-title">Not Playing</div>
+            <div class="cc-media-artist" id="cc-mini-artist"></div>
+          </div>
+          <div class="cc-media-controls">
+            <ion-icon name="play-skip-back" onclick="musicPrev(); ccSyncMusic();"></ion-icon>
+            <ion-icon class="play-btn" name="play" id="cc-mini-play" onclick="musicToggle(); ccSyncMusic();"></ion-icon>
+            <ion-icon name="play-skip-forward" onclick="musicNext(); ccSyncMusic();"></ion-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="cc-row" style="align-items:stretch; height:150px;">
+        <div style="display:flex; flex-direction:column; gap:14px; flex:1;">
+          <div style="display:flex; gap:14px; flex:1;">
+            <div class="cc-small-card" onclick="ccToggle(this)"><ion-icon name="lock-closed"></ion-icon></div>
+            <div class="cc-small-card" onclick="ccToggle(this)"><ion-icon name="tv"></ion-icon></div>
+          </div>
+          <div class="cc-focus" id="cc-focus" onclick="ccToggle(this)">
+            <ion-icon name="moon"></ion-icon>
+            <span>Focus</span>
+          </div>
+        </div>
+        <div class="cc-sliders">
+          <div class="cc-slider-card" id="cc-brightness-card" onclick="ccSliderClick(event,'brightness')">
+            <div class="cc-slider-fill" id="cc-brightness-fill" style="height:70%;"></div>
+            <ion-icon class="cc-slider-icon" name="sunny"></ion-icon>
+          </div>
+          <div class="cc-slider-card" id="cc-volume-card" onclick="ccSliderClick(event,'volume')">
+            <div class="cc-slider-fill" id="cc-volume-fill" style="height:55%;"></div>
+            <ion-icon class="cc-slider-icon" name="volume-high"></ion-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="cc-row-icons" style="margin-top:10px;">
+        <div class="cc-small-card" onclick="ccToggle(this)"><ion-icon name="flashlight"></ion-icon></div>
+        <div class="cc-small-card" onclick="openApp('clock'); closeControlCenter();"><ion-icon name="timer-outline"></ion-icon></div>
+        <div class="cc-small-card" onclick="openApp('calc'); closeControlCenter();"><ion-icon name="calculator"></ion-icon></div>
+        <div class="cc-small-card" onclick="ccToggle(this)"><ion-icon name="camera"></ion-icon></div>
+      </div>
+    </div>
+
+    <div class="screens">
+
+      <!-- HOME SCREEN -->
+      <div class="app-screen active" id="home">
+        <div class="home-wallpaper-layer" id="home-wallpaper-layer"></div>
+        <div class="statusbar" id="sb-home">
+          <span class="time" id="clk-home">9:41</span>
+          <span class="icons">
+            <svg class="sb-signal" width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" rx="0.5" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" rx="0.5" fill="currentColor"/><rect x="9" y="3" width="3" height="8" rx="0.5" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" rx="0.5" fill="currentColor"/></svg>
+            <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 10.5a1.2 1.2 0 100 2.4 1.2 1.2 0 000-2.4zM4.6 7.4a5 5 0 016.8 0 .6.6 0 00.85-.85 6.2 6.2 0 00-8.5 0 .6.6 0 00.85.85zM2.2 4.7a8.9 8.9 0 0111.6 0 .6.6 0 10.8-.9 10.1 10.1 0 00-13.2 0 .6.6 0 10.8.9z" fill="currentColor"/></svg>
+            <span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span><span class="sb-batt-tip"></span></span>
+          </span>
+        </div>
+        <div class="home-widgets-row">
+          <div class="home-widget" id="hw-weather" onclick="openApp('weather')">
+            <div class="hw-title-row"><span class="hw-title" id="hw-weather-city">Weather</span><ion-icon class="hw-icon" name="partly-sunny" id="hw-weather-icon"></ion-icon></div>
+            <div class="hw-weather-desc" id="hw-weather-desc">Loading…</div>
+            <div class="hw-weather-temp" id="hw-weather-temp"></div>
+            <div class="hw-weather-hilo" id="hw-weather-hilo"></div>
+          </div>
+          <div class="home-widget" id="hw-calendar" onclick="openApp('calendar')">
+            <div class="hw-title-row"><span class="hw-cal-weekday" id="hw-cal-weekday">Today</span></div>
+            <div class="hw-cal-date" id="hw-cal-date"></div>
+            <div class="hw-cal-events" id="hw-cal-events"></div>
+          </div>
+        </div>
+        <div class="app-grid" id="app-grid"></div>
+        <div class="dock">
+          <div class="app-icon-wrap"><div class="app-icon safari" onclick="openApp('safari')"></div></div>
+          <div class="app-icon-wrap"><div class="app-icon music" onclick="openApp('music')"></div></div>
+          <div class="app-icon-wrap"><div class="app-icon blink" onclick="openApp('blink')"></div></div>
+          <div class="app-icon-wrap"><div class="app-icon calc" onclick="openApp('calc')"></div></div>
+        </div>
+        <div class="home-indicator"></div>
+      </div>
+
+      <!-- CALCULATOR -->
+      <div class="app-screen" id="calc">
+        <div class="statusbar" id="sb-calc"><span class="time" id="clk-calc">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div style="padding:56px 0 0;"></div>
+        <div class="calc-display" id="calc-display">0</div>
+        <div class="calc-pad">
+          <button class="calc-btn fn" onclick="calcClear()" id="calc-clear">AC</button>
+          <button class="calc-btn fn" onclick="calcSign()">+/-</button>
+          <button class="calc-btn fn" onclick="calcPercent()">%</button>
+          <button class="calc-btn op" onclick="calcOp('÷')">÷</button>
+
+          <button class="calc-btn num" onclick="calcNum('7')">7</button>
+          <button class="calc-btn num" onclick="calcNum('8')">8</button>
+          <button class="calc-btn num" onclick="calcNum('9')">9</button>
+          <button class="calc-btn op" onclick="calcOp('×')">×</button>
+
+          <button class="calc-btn num" onclick="calcNum('4')">4</button>
+          <button class="calc-btn num" onclick="calcNum('5')">5</button>
+          <button class="calc-btn num" onclick="calcNum('6')">6</button>
+          <button class="calc-btn op" onclick="calcOp('−')">−</button>
+
+          <button class="calc-btn num" onclick="calcNum('1')">1</button>
+          <button class="calc-btn num" onclick="calcNum('2')">2</button>
+          <button class="calc-btn num" onclick="calcNum('3')">3</button>
+          <button class="calc-btn op" onclick="calcOp('+')">+</button>
+
+          <button class="calc-btn num zero" onclick="calcNum('0')">0</button>
+          <button class="calc-btn num" onclick="calcDot()">.</button>
+          <button class="calc-btn op" onclick="calcEquals()">=</button>
+        </div>
+        <div class="home-indicator dark-ind" style="background:#fff;" onclick="goHome()"></div>
+      </div>
+
+      <!-- NOTES LIST -->
+      <div class="app-screen" id="notes">
+        <div class="statusbar" id="sb-notes"><span class="time" id="clk-notes">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div class="app-topbar"><h1>Notes</h1><span style="font-size:22px; cursor:pointer; color:var(--ios-yellow); display:flex;" onclick="newNote()"><ion-icon name="create-outline"></ion-icon></span></div>
+        <div class="notes-list" id="notes-list"></div>
+        <div class="notes-fab" onclick="newNote()"><ion-icon name="create-outline" style="font-size:22px;"></ion-icon></div>
+        <div class="home-indicator dark-ind" onclick="goHome()"></div>
+      </div>
+
+      <!-- NOTE EDITOR -->
+      <div class="app-screen" id="note-editor">
+        <div class="statusbar" id="sb-noteeditor"><span class="time" id="clk-noteeditor">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div class="note-edit-bar">
+          <span class="back-btn" onclick="closeNoteEditor()"><svg viewBox="0 0 11 18" fill="none"><path d="M10 1L2 9L10 17" stroke="#0a84ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Notes</span>
+          <span style="color:#ff453a; font-size:16px; cursor:pointer;" onclick="deleteCurrentNote()">Delete</span>
+        </div>
+        <textarea id="note-textarea" placeholder="Note" oninput="autosaveNote()"></textarea>
+        <div class="home-indicator dark-ind" onclick="goHome()"></div>
+      </div>
+
+      <!-- CLOCK -->
+      <div class="app-screen" id="clock">
+        <div class="statusbar" id="sb-clock"><span class="time" id="clk-clock">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div class="app-topbar"><h1 id="clock-page-title">World Clock</h1><span></span></div>
+
+        <div class="clock-body active" id="clock-body-world">
+          <div id="world-clock-list" style="width:100%;"></div>
+        </div>
+        <div class="clock-body" id="clock-body-alarm">
+          <div class="big-time" id="alarm-current-time">9:41</div>
+          <div class="big-date" style="margin-bottom:20px;">Current time</div>
+          <div style="color:#8e8e93; padding:0 30px; text-align:center; font-size:14px;">Alarm creation isn't wired to a real OS scheduler in this demo — showing current time here instead.</div>
+        </div>
+        <div class="clock-body" id="clock-body-stopwatch">
+          <div class="timer-display" id="sw-display">00:00.00</div>
+          <div class="timer-controls">
+            <button class="timer-btn reset" id="sw-lap-btn" onclick="swLap()">Lap</button>
+            <button class="timer-btn start" id="sw-startstop" onclick="swToggle()">Start</button>
+          </div>
+          <div class="stopwatch-laps" id="sw-laps"></div>
+        </div>
+        <div class="clock-body" id="clock-body-timer">
+          <div class="timer-display" id="timer-display">05:00</div>
+          <input type="range" min="10" max="3600" value="300" id="timer-range" style="width:80%;" oninput="timerRangeChange(this.value)">
+          <div class="timer-controls" style="margin-top:26px;">
+            <button class="timer-btn reset" onclick="timerReset()">Cancel</button>
+            <button class="timer-btn start" id="timer-startstop" onclick="timerToggle()">Start</button>
+          </div>
+        </div>
+
+        <div class="clock-tabs">
+          <div class="clock-tab active" onclick="clockTab('world')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 010 18 15 15 0 010-18z"/></svg>World Clock</div>
+          <div class="clock-tab" onclick="clockTab('alarm')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M5 3L3 5M19 3l2 2"/></svg>Alarm</div>
+          <div class="clock-tab" onclick="clockTab('stopwatch')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="13" r="8"/><path d="M12 13V9M10 2h4"/></svg>Stopwatch</div>
+          <div class="clock-tab" onclick="clockTab('timer')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg>Timer</div>
+        </div>
+        <div class="home-indicator dark-ind" onclick="goHome()"></div>
+      </div>
+
+      <!-- WEATHER -->
+      <div class="app-screen" id="weather">
+        <div class="statusbar" id="sb-weather"><span class="time" id="clk-weather">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div class="wx-search"><input type="text" id="wx-city-input" placeholder="Search for a city" onkeydown="if(event.key==='Enter')wxSearch()"><button onclick="wxSearch()">Go</button></div>
+        <div id="wx-content">
+          <div class="wx-loading">Loading weather…</div>
+        </div>
+        <div class="home-indicator" onclick="goHome()"></div>
+      </div>
+
+      <!-- CALENDAR -->
+      <div class="app-screen" id="calendar">
+        <div class="statusbar" id="sb-calendar"><span class="time" id="clk-calendar">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div class="cal-topbar">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:22px; color:var(--ios-blue); cursor:pointer;" onclick="calChangeMonth(-1)">‹</span>
+            <div style="text-align:center;">
+              <div class="cal-month-label" id="cal-month-label">MONTH</div>
+            </div>
+            <span style="font-size:22px; color:var(--ios-blue); cursor:pointer;" onclick="calChangeMonth(1)">›</span>
+          </div>
+        </div>
+        <div class="cal-weekdays"><div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div></div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-events" id="cal-events"></div>
+        <div class="home-indicator dark-ind" onclick="goHome()"></div>
+      </div>
+
+      <!-- MUSIC -->
+      <div class="app-screen" id="music">
+        <div class="statusbar" id="sb-music"><span class="time" id="clk-music">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div class="music-body">
+          <div class="album-art" id="album-art"><ion-icon name="musical-notes" style="color:rgba(255,255,255,0.85); font-size:80px;"></ion-icon></div>
+          <div class="music-title" id="music-title">Skyline Drift</div>
+          <div class="music-artist" id="music-artist">The Wavelengths</div>
+          <div class="music-progress" onclick="musicSeek(event)"><div class="music-progress-fill" id="music-progress-fill"></div></div>
+          <div class="music-times"><span id="music-cur">0:00</span><span id="music-dur">3:24</span></div>
+          <div class="music-controls">
+            <svg viewBox="0 0 24 24" onclick="musicPrev()"><path d="M6 6h2v12H6zM20 6L9 12l11 6z"/></svg>
+            <div class="music-play" onclick="musicToggle()"><svg id="music-play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
+            <svg viewBox="0 0 24 24" onclick="musicNext()"><path d="M16 6h2v12h-2zM4 6l11 6-11 6z"/></svg>
+          </div>
+          <div class="music-vol">
+            <ion-icon name="volume-low" style="font-size:16px; color:#8e8e93;"></ion-icon>
+            <input type="range" min="0" max="100" value="70" oninput="musicVol(this.value)">
+            <ion-icon name="volume-high" style="font-size:16px; color:#8e8e93;"></ion-icon>
+          </div>
+          <div class="music-playlist" id="music-playlist"></div>
+        </div>
+        <div class="home-indicator" onclick="goHome()"></div>
+      </div>
+
+      <!-- SAFARI -->
+      <div class="app-screen" id="safari">
+        <div class="safari-bar">
+          <div class="safari-url"><ion-icon name="lock-closed" style="font-size:13px; color:#636366;"></ion-icon><input type="text" id="safari-input" placeholder="Search or enter website name" onkeydown="if(event.key==='Enter')safariGo()"></div>
+          <span class="safari-go" onclick="safariGo()">Go</span>
+        </div>
+        <div class="safari-frame-wrap" id="safari-frame-wrap">
+          <div class="safari-start">
+            <div class="safari-note">This browser loads real pages via an iframe. Some sites block embedding (X-Frame-Options) and won't display — try Wikipedia, example.com, or Hacker News.</div>
+            <h3>Favorites</h3>
+            <div class="safari-favs">
+              <div class="safari-fav" onclick="safariGoTo('https://en.wikipedia.org')"><div class="safari-fav-icon"><ion-icon name="book" style="color:#0a84ff;"></ion-icon></div><span>Wikipedia</span></div>
+              <div class="safari-fav" onclick="safariGoTo('https://news.ycombinator.com')"><div class="safari-fav-icon"><ion-icon name="newspaper" style="color:#ff9f0a;"></ion-icon></div><span>HN</span></div>
+              <div class="safari-fav" onclick="safariGoTo('https://example.com')"><div class="safari-fav-icon"><ion-icon name="globe" style="color:#30d158;"></ion-icon></div><span>Example</span></div>
+              <div class="safari-fav" onclick="safariGoTo('https://www.wikipedia.org/wiki/Special:Random')"><div class="safari-fav-icon"><ion-icon name="shuffle" style="color:#af52de;"></ion-icon></div><span>Random</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="home-indicator" style="background:#000;" onclick="goHome()"></div>
+      </div>
+
+      <!-- PHOTOS -->
+      <div class="app-screen" id="photos">
+        <div class="statusbar" id="sb-photos"><span class="time" id="clk-photos">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div class="app-topbar"><h1>Photos</h1><span style="font-size:24px; cursor:pointer; color:var(--ios-blue); display:flex;" onclick="document.getElementById('photos-file-input').click()"><ion-icon name="add-circle"></ion-icon></span></div>
+        <input type="file" id="photos-file-input" accept="image/*" multiple style="display:none;" onchange="photosAddFiles(event)">
+        <div class="photos-grid" id="photos-grid"></div>
+        <div class="home-indicator dark-ind" onclick="goHome()"></div>
+      </div>
+
+      <!-- CAMERA -->
+      <div class="app-screen" id="camera">
+        <div class="camera-viewport">
+          <video id="camera-video" autoplay playsinline muted></video>
+          <div class="camera-flash-overlay" id="camera-flash-overlay"></div>
+          <div class="camera-permission-msg" id="camera-permission-msg">
+            <ion-icon name="camera-outline" style="font-size:44px; color:#8e8e93;"></ion-icon>
+            <div id="camera-permission-text">Requesting camera access…</div>
+            <div class="camera-retry-btn" id="camera-retry-btn" onclick="cameraStart()" style="display:none;">Try Again</div>
+          </div>
+        </div>
+        <div class="camera-top-bar">
+          <ion-icon name="chevron-down" onclick="closeCameraApp()"></ion-icon>
+          <ion-icon name="flash-off" id="camera-flash-icon" onclick="cameraToggleFlash()"></ion-icon>
+        </div>
+        <div class="camera-bottom-bar">
+          <div class="camera-last-thumb" id="camera-last-thumb" onclick="openApp('photos')"></div>
+          <div class="camera-shutter-btn" id="camera-shutter-btn" onclick="cameraCapture()"><div class="camera-shutter-inner"></div></div>
+          <div class="camera-flip-btn" id="camera-flip-btn" onclick="cameraFlip()"><ion-icon name="camera-reverse-outline"></ion-icon></div>
+        </div>
+      </div>
+
+      <!-- PHOTO VIEWER -->
+      <div class="app-screen" id="photo-viewer">
+        <div class="photo-viewer-backdrop"></div>
+        <div class="photo-viewer-top">
+          <span onclick="closePhotoViewer()"><ion-icon name="chevron-down"></ion-icon></span>
+          <span onclick="deleteCurrentPhoto()"><ion-icon name="trash"></ion-icon></span>
+        </div>
+        <img id="photo-viewer-img" class="photo-viewer-img" src="" alt="">
+        <div class="home-indicator" onclick="closePhotoViewer()"></div>
+      </div>
+
+      <!-- BLINK -->
+      <div class="app-screen" id="blink">
+        <div class="blink-frame-wrap" id="blink-frame-wrap">
+          <iframe src="https://urboge.github.io/blink/blink.html" title="Blink"></iframe>
+        </div>
+        <div class="home-indicator" onclick="goHome()"></div>
+      </div>
+
+      <!-- REMINDERS -->
+      <div class="app-screen" id="reminders">
+        <div class="statusbar" id="sb-reminders"><span class="time" id="clk-reminders">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div class="app-topbar"><h1>Reminders</h1><span></span></div>
+        <div class="rem-lists-grid" id="rem-lists-grid"></div>
+        <div class="rem-mylists-row">
+          <span>My Lists</span>
+          <span class="rem-add-list-btn" onclick="remPromptNewList()"><ion-icon name="add-circle"></ion-icon> Add List</span>
+        </div>
+        <div class="rem-mylists" id="rem-mylists"></div>
+        <div class="home-indicator dark-ind" onclick="goHome()"></div>
+      </div>
+
+      <!-- REMINDER LIST DETAIL -->
+      <div class="app-screen" id="reminder-detail">
+        <div class="statusbar" id="sb-reminder-detail"><span class="time" id="clk-reminder-detail">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div class="app-topbar"><span class="back-btn" onclick="closeReminderDetail()"><svg viewBox="0 0 11 18" fill="none"><path d="M10 1L2 9L10 17" stroke="#0a84ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Lists</span></div>
+        <h1 class="rem-detail-title" id="rem-detail-title">List</h1>
+        <div class="rem-items-list" id="rem-items-list"></div>
+        <div class="rem-add-row">
+          <ion-icon name="add-circle" style="color:var(--ios-red); font-size:22px;"></ion-icon>
+          <input type="text" id="rem-new-item-input" placeholder="New Reminder" onkeydown="if(event.key==='Enter') remAddItem()">
+        </div>
+        <div class="home-indicator dark-ind" onclick="goHome()"></div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="app-screen" id="settings">
+        <div class="statusbar" id="sb-settings"><span class="time" id="clk-settings">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div class="app-topbar"><h1>Settings</h1><span></span></div>
+        <div class="settings-list">
+          <div class="settings-group">
+            <div class="settings-row"><span class="settings-icon" style="background:#0a84ff;"><ion-icon name="airplane"></ion-icon></span>Airplane Mode<div class="settings-toggle" id="airplane-toggle" onclick="toggleSetting(this)"><div class="knob"></div></div></div>
+            <div class="settings-row"><span class="settings-icon" style="background:#34c759;"><ion-icon name="wifi"></ion-icon></span>Wi-Fi<span class="chev" style="color:#8e8e93; font-size:15px;">Home Network ›</span></div>
+            <div class="settings-row"><span class="settings-icon" style="background:#34c759;"><ion-icon name="bluetooth"></ion-icon></span>Bluetooth<span class="chev" style="color:#8e8e93; font-size:15px;">On ›</span></div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-row"><span class="settings-icon" style="background:#ff9f0a;"><ion-icon name="notifications"></ion-icon></span>Notifications<span class="chev">›</span></div>
+            <div class="settings-row" onclick="openApp('wallpaper-settings')"><span class="settings-icon" style="background:#af52de;"><ion-icon name="color-palette"></ion-icon></span>Wallpaper<span class="chev">›</span></div>
+            <div class="settings-row"><span class="settings-icon" style="background:#8e8e93;"><ion-icon name="volume-high"></ion-icon></span>Sounds & Haptics<span class="chev">›</span></div>
+            <div class="settings-row"><span class="settings-icon" style="background:#8e8e93;"><ion-icon name="moon"></ion-icon></span>Dark Mode<div class="settings-toggle on" id="darkmode-toggle" onclick="toggleDarkMode(this)"><div class="knob"></div></div></div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-row" onclick="openApp('about')"><span class="settings-icon" style="background:#636366;"><ion-icon name="information"></ion-icon></span>About This Emulator<span class="chev">›</span></div>
+          </div>
+        </div>
+        <div class="home-indicator dark-ind" onclick="goHome()"></div>
+      </div>
+
+      <!-- WALLPAPER SETTINGS -->
+      <div class="app-screen" id="wallpaper-settings">
+        <div class="statusbar" id="sb-wallpaper"><span class="time" id="clk-wallpaper">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div class="app-topbar"><span class="back-btn" onclick="openApp('settings')"><svg viewBox="0 0 11 18" fill="none"><path d="M10 1L2 9L10 17" stroke="#0a84ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Settings</span><h1 style="font-size:20px;">Wallpaper</h1><span style="width:50px;"></span></div>
+        <div class="settings-list">
+          <div class="wp-preview-wrap">
+            <div class="wp-preview" id="wp-preview">
+              <div class="wp-preview-blur" id="wp-preview-blur"></div>
+            </div>
+          </div>
+
+          <div class="settings-group" style="margin-top:18px;">
+            <div style="padding:12px 14px;">
+              <div style="font-size:13px; color:#8e8e93; margin-bottom:8px;">Image URL</div>
+              <div style="display:flex; gap:8px;">
+                <input type="text" id="wp-url-input" placeholder="https://example.com/image.jpg" style="flex:1; background:#2c2c2e; border:none; border-radius:8px; padding:10px 12px; color:#fff; font-size:14px; outline:none;">
+                <button onclick="wpApplyUrl()" style="background:#0a84ff; border:none; border-radius:8px; padding:0 16px; color:#fff; font-size:14px; cursor:pointer;">Apply</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-row" onclick="document.getElementById('wp-file-input').click()">
+              <span class="settings-icon" style="background:#30d158;"><ion-icon name="image"></ion-icon></span>
+              Choose Photo
+              <span class="chev">›</span>
+            </div>
+            <input type="file" id="wp-file-input" accept="image/*" style="display:none;" onchange="wpApplyFile(event)">
+          </div>
+
+          <div class="settings-group">
+            <div style="padding:12px 14px;">
+              <div style="display:flex; justify-content:space-between; font-size:13px; color:#8e8e93; margin-bottom:8px;">
+                <span>Blur</span>
+                <span id="wp-blur-value">0px</span>
+              </div>
+              <input type="range" min="0" max="30" value="0" id="wp-blur-range" style="width:100%;" oninput="wpBlurChange(this.value)">
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-row" onclick="wpReset()">
+              <span class="settings-icon" style="background:#ff453a;"><ion-icon name="refresh"></ion-icon></span>
+              Reset to Default
+            </div>
+          </div>
+        </div>
+        <div class="home-indicator dark-ind" onclick="goHome()"></div>
+      </div>
+
+      <!-- ABOUT -->
+      <div class="app-screen" id="about">
+        <div class="statusbar" id="sb-about"><span class="time" id="clk-about">9:41</span><span class="icons"><svg width="17" height="11" viewBox="0 0 17 11"><rect x="0" y="7" width="3" height="4" fill="currentColor"/><rect x="4.5" y="5" width="3" height="6" fill="currentColor"/><rect x="9" y="3" width="3" height="8" fill="currentColor"/><rect x="13.5" y="0" width="3" height="11" fill="currentColor"/></svg><span class="sb-batt"><span class="sb-batt-body"><span class="sb-batt-fill"></span></span></span></span></div>
+        <div class="app-topbar"><span class="back-btn" onclick="openApp('settings')"><svg viewBox="0 0 11 18" fill="none"><path d="M10 1L2 9L10 17" stroke="#0a84ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Settings</span></div>
+        <div class="settings-list">
+          <div class="settings-group">
+            <div class="about-row"><span>Build</span><span>Web Emulator 1.0</span></div>
+            <div class="about-row"><span>Apps</span><span>8 working apps</span></div>
+            <div class="about-row"><span>Weather data</span><span>Open-Meteo (live)</span></div>
+            <div class="about-row"><span>Storage</span><span>In-memory (resets on reload)</span></div>
+          </div>
+        </div>
+        <div class="home-indicator dark-ind" onclick="goHome()"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<script>
+/* ========================= NOTIFICATIONS ========================= */
+const NOTIF_APP_META = {
+  clock:    {label:'Clock',    color:'#1c1c1e', icon:'time'},
+  calendar: {label:'Calendar', color:'#ff453a', icon:'calendar'},
+};
+let notifications = []; // {id, app, title, body, time}
+
+function pad2(n){ return n.toString().padStart(2,'0'); }
+function notifTimeLabel(){
+  const now = new Date();
+  const h24 = now.getHours(), m = now.getMinutes();
+  return `${h24===0?12:(h24>12?h24-12:h24)}:${pad2(m)}`;
+}
+
+function pushNotification(appId, title, body){
+  const id = 'notif_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+  const notif = {id, app:appId, title, body, time: notifTimeLabel()};
+  notifications.unshift(notif);
+  renderLockNotifStack();
+  showBanner(notif);
+}
+
+function showBanner(notif){
+  const meta = NOTIF_APP_META[notif.app] || {label:notif.app, color:'#636366', icon:'notifications'};
+  const stack = document.getElementById('notif-banner-stack');
+  const el = document.createElement('div');
+  el.className = 'notif-banner';
+  el.dataset.id = notif.id;
+  el.innerHTML = `
+    <div class="notif-banner-icon" style="background:${meta.color};"><ion-icon name="${meta.icon}"></ion-icon></div>
+    <div class="notif-banner-body">
+      <div class="notif-banner-app">${meta.label}</div>
+      <div class="notif-banner-title">${escapeHtml(notif.title)}</div>
+      <div class="notif-banner-text">${escapeHtml(notif.body)}</div>
+    </div>
+    <div class="notif-banner-time">now</div>
+  `;
+  el.addEventListener('click', ()=>{
+    dismissBanner(el);
+    if(notif.app === 'clock') openApp('clock');
+    if(notif.app === 'calendar') openApp('calendar');
+  });
+  attachBannerSwipe(el);
+  stack.appendChild(el);
+  requestAnimationFrame(()=> el.classList.add('visible'));
+  setTimeout(()=> dismissBanner(el), 4500);
+}
+
+function dismissBanner(el){
+  if(!el || el.dataset.dismissed) return;
+  el.dataset.dismissed = '1';
+  el.classList.remove('visible');
+  el.style.opacity = '0';
+  setTimeout(()=> el.remove(), 350);
+}
+
+function attachBannerSwipe(el){
+  let startX = 0, currentX = 0, dragging = false;
+  function pointX(e){ return (e.touches && e.touches[0]) ? e.touches[0].clientX : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : e.clientX); }
+  function onStart(e){ dragging = true; startX = pointX(e); currentX = startX; el.style.transition = 'none'; }
+  function onMove(e){
+    if(!dragging) return;
+    currentX = pointX(e);
+    const dx = Math.min(0, currentX - startX);
+    el.style.transform = `translateY(0) translateX(${dx}px)`;
+  }
+  function onEnd(){
+    if(!dragging) return;
+    dragging = false;
+    el.style.transition = '';
+    const dx = currentX - startX;
+    if(dx < -70){
+      el.classList.add('dismissing');
+      setTimeout(()=> el.remove(), 260);
+    } else {
+      el.style.transform = '';
+    }
+  }
+  el.addEventListener('touchstart', onStart, {passive:true});
+  el.addEventListener('touchmove', onMove, {passive:true});
+  el.addEventListener('touchend', onEnd);
+  el.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', (e)=>{ if(dragging) onMove(e); });
+  window.addEventListener('mouseup', onEnd);
+}
+
+function renderLockNotifStack(){
+  const stack = document.getElementById('lock-notif-stack');
+  stack.innerHTML = '';
+  notifications.forEach(notif=>{
+    const meta = NOTIF_APP_META[notif.app] || {label:notif.app, color:'#636366', icon:'notifications'};
+    const el = document.createElement('div');
+    el.className = 'lock-notif';
+    el.dataset.id = notif.id;
+    el.innerHTML = `
+      <div class="lock-notif-inner">
+        <div class="notif-banner-icon" style="background:${meta.color};"><ion-icon name="${meta.icon}"></ion-icon></div>
+        <div class="notif-banner-body">
+          <div class="notif-banner-app">${meta.label}</div>
+          <div class="notif-banner-title">${escapeHtml(notif.title)}</div>
+          <div class="notif-banner-text">${escapeHtml(notif.body)}</div>
+        </div>
+        <div class="notif-banner-time">${notif.time}</div>
+      </div>
+    `;
+    attachLockNotifSwipe(el);
+    stack.appendChild(el);
+  });
+}
+
+function removeNotification(id){
+  notifications = notifications.filter(n => n.id !== id);
+  renderLockNotifStack();
+}
+
+function attachLockNotifSwipe(el){
+  const inner = el.querySelector('.lock-notif-inner');
+  let startX = 0, currentX = 0, dragging = false;
+  const DELETE_THRESHOLD = 130; // px of leftward drag needed to delete
+  function pointX(e){ return (e.touches && e.touches[0]) ? e.touches[0].clientX : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : e.clientX); }
+  function onStart(e){ dragging = true; startX = pointX(e); currentX = startX; el.classList.add('swiping'); }
+  function onMove(e){
+    if(!dragging) return;
+    currentX = pointX(e);
+    const dx = Math.min(0, currentX - startX);
+    inner.style.transform = `translateX(${dx}px)`;
+    inner.style.opacity = String(Math.max(0.2, 1 - Math.abs(dx) / (DELETE_THRESHOLD*1.4)));
+  }
+  function onEnd(){
+    if(!dragging) return;
+    dragging = false;
+    el.classList.remove('swiping');
+    const dx = currentX - startX;
+    if(dx < -DELETE_THRESHOLD){
+      const notifId = el.dataset.id;
+      el.classList.add('dismissing');
+      inner.style.transform = 'translateX(-100%)';
+      inner.style.opacity = '0';
+      setTimeout(()=> removeNotification(notifId), 260);
+    } else {
+      inner.style.transform = '';
+      inner.style.opacity = '';
+    }
+  }
+  el.addEventListener('touchstart', onStart, {passive:true});
+  el.addEventListener('touchmove', onMove, {passive:true});
+  el.addEventListener('touchend', onEnd);
+  el.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', (e)=>{ if(dragging) onMove(e); });
+  window.addEventListener('mouseup', onEnd);
+}
+
+/* ---- Calendar event time-reached trigger ---- */
+let notifiedEventKeys = new Set();
+function parseEventTimeToDate(timeStr, baseDate){
+  const m = timeStr.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if(!m) return null;
+  let h = parseInt(m[1]) % 12;
+  if(/pm/i.test(m[3])) h += 12;
+  const min = parseInt(m[2]);
+  const d = new Date(baseDate);
+  d.setHours(h, min, 0, 0);
+  return d;
+}
+function checkCalendarReminders(){
+  const now = new Date();
+  Object.keys(calEvents).forEach(key=>{
+    const [y,m,d] = key.split('-').map(Number);
+    const dayDate = new Date(y, m, d);
+    (calEvents[key] || []).forEach((ev, i)=>{
+      const evTime = parseEventTimeToDate(ev.time, dayDate);
+      if(!evTime) return;
+      const uniqueKey = key + '_' + i + '_' + ev.title;
+      const diff = now - evTime;
+      if(diff >= 0 && diff < 60000 && !notifiedEventKeys.has(uniqueKey)){
+        notifiedEventKeys.add(uniqueKey);
+        pushNotification('calendar', ev.title, 'Today at ' + ev.time);
+      }
+    });
+  });
+}
+setInterval(checkCalendarReminders, 15000);
+
+/* ========================= GLOBAL KEYBOARD ========================= */
+const KB_LETTERS = [
+  ['q','w','e','r','t','y','u','i','o','p'],
+  ['a','s','d','f','g','h','j','k','l'],
+];
+const KB_LETTERS_LAST_ROW = ['z','x','c','v','b','n','m'];
+const KB_NUMBERS = [
+  ['1','2','3','4','5','6','7','8','9','0'],
+  ['-','/',':',';','(',')','$','&','@','"'],
+];
+const KB_NUMBERS_LAST_ROW = ['.',',','?','!',"'"];
+const KB_SYMBOLS = [
+  ['[',']','{','}','#','%','^','*','+','='],
+  ['_','\\','|','~','<','>','€','£','¥','·'],
+];
+const KB_SYMBOLS_LAST_ROW = ['.',',','?','!',"'"];
+
+let kbActiveEl = null;
+let kbLayer = 'letters'; // 'letters' | 'numbers' | 'symbols'
+let kbShift = false;
+
+function isTypableField(el){
+  if(!el) return false;
+  if(el.tagName === 'TEXTAREA') return true;
+  if(el.tagName === 'INPUT'){
+    const type = (el.getAttribute('type') || 'text').toLowerCase();
+    return ['text','search','url','email','tel'].includes(type);
+  }
+  return false;
+}
+
+function blockNativeKeyboard(el){
+  // Prevents the real device's own on-screen keyboard from appearing, so only
+  // our custom global keyboard handles input. inputmode="none" is the standard
+  // way browsers respect this; readonly is a stronger fallback for mobile Safari,
+  // which doesn't always honor inputmode="none" on its own.
+  if(!el || el.dataset.kbBlocked) return;
+  el.dataset.kbBlocked = '1';
+  el.setAttribute('inputmode', 'none');
+  el.setAttribute('autocomplete', 'off');
+  el.setAttribute('autocorrect', 'off');
+  el.setAttribute('autocapitalize', 'off');
+  el.setAttribute('spellcheck', 'false');
+  el.setAttribute('readonly', 'readonly');
+  el.addEventListener('mousedown', function(){ el.removeAttribute('readonly'); });
+  el.addEventListener('touchstart', function(){ el.removeAttribute('readonly'); }, {passive:true});
+}
+
+function applyKeyboardBlockToAllFields(){
+  document.querySelectorAll('input, textarea').forEach(el=>{
+    if(isTypableField(el)) blockNativeKeyboard(el);
+  });
+}
+applyKeyboardBlockToAllFields();
+
+function showGlobalKeyboard(el){
+  kbActiveEl = el;
+  kbLayer = 'letters';
+  kbShift = false;
+  renderGlobalKeyboard();
+  document.getElementById('global-keyboard').classList.add('open');
+  shiftSearchBarAboveKeyboard(true);
+}
+function hideGlobalKeyboard(){
+  document.getElementById('global-keyboard').classList.remove('open');
+  kbActiveEl = null;
+  shiftSearchBarAboveKeyboard(false);
+}
+
+function shiftSearchBarAboveKeyboard(keyboardOpen){
+  const bar = document.getElementById('search-bar-dock');
+  if(!bar) return;
+  bar.classList.toggle('kb-open', !!keyboardOpen);
+}
+
+document.addEventListener('focusin', function(e){
+  if(isTypableField(e.target)){
+    showGlobalKeyboard(e.target);
+  }
+});
+document.addEventListener('focusout', function(e){
+  // Delay so a tap on a keyboard key (which prevents default blur-loss) doesn't cause a flicker,
+  // and so focus moving between two typable fields doesn't hide/show the keyboard unnecessarily.
+  setTimeout(()=>{
+    const active = document.activeElement;
+    if(!isTypableField(active)){
+      hideGlobalKeyboard();
+    }
+  }, 60);
+});
+
+// Cross-origin iframes (Safari, Blink) don't reliably fire focusout on the parent
+// document when the user taps into them, so our custom keyboard could get stuck open.
+// window.blur fires when focus leaves the top-level document entirely (e.g. into an
+// iframe), which is the standard way to detect this and let the iframe's own page
+// use the browser's real, native keyboard for typing.
+window.addEventListener('blur', function(){
+  setTimeout(()=>{
+    if(document.activeElement && document.activeElement.tagName === 'IFRAME'){
+      hideGlobalKeyboard();
+    }
+  }, 30);
+});
+
+function kbInsertText(text){
+  const el = kbActiveEl;
+  if(!el) return;
+  const start = el.selectionStart != null ? el.selectionStart : el.value.length;
+  const end = el.selectionEnd != null ? el.selectionEnd : el.value.length;
+  const before = el.value.slice(0, start);
+  const after = el.value.slice(end);
+  el.value = before + text + after;
+  const newPos = start + text.length;
+  if(el.setSelectionRange) el.setSelectionRange(newPos, newPos);
+  el.dispatchEvent(new Event('input', {bubbles:true}));
+}
+function kbBackspace(){
+  const el = kbActiveEl;
+  if(!el) return;
+  const start = el.selectionStart != null ? el.selectionStart : el.value.length;
+  const end = el.selectionEnd != null ? el.selectionEnd : el.value.length;
+  let before, after, newPos;
+  if(start !== end){
+    before = el.value.slice(0, start);
+    after = el.value.slice(end);
+    newPos = start;
+  } else {
+    before = el.value.slice(0, Math.max(0, start - 1));
+    after = el.value.slice(start);
+    newPos = Math.max(0, start - 1);
+  }
+  el.value = before + after;
+  if(el.setSelectionRange) el.setSelectionRange(newPos, newPos);
+  el.dispatchEvent(new Event('input', {bubbles:true}));
+}
+function kbEnter(){
+  const el = kbActiveEl;
+  if(!el) return;
+  el.focus();
+  if(el.tagName === 'TEXTAREA'){
+    kbInsertText('\n');
+  } else {
+    el.dispatchEvent(new KeyboardEvent('keydown', {key:'Enter', code:'Enter', keyCode:13, which:13, bubbles:true, cancelable:true}));
+    el.blur();
+  }
+}
+
+function kbKeyMouseDown(e){
+  // Prevent the tap from stealing focus away from the active input
+  e.preventDefault();
+}
+
+function renderGlobalKeyboard(){
+  const kb = document.getElementById('global-keyboard');
+  kb.innerHTML = '';
+
+  if(kbLayer === 'letters'){
+    KB_LETTERS.forEach((chars, rowIdx)=>{
+      const rowEl = document.createElement('div');
+      rowEl.className = 'gkb-row' + (rowIdx === 1 ? ' row-mid' : '');
+      chars.forEach(c=>{
+        const ch = kbShift ? c.toUpperCase() : c;
+        const key = document.createElement('div');
+        key.className = 'gkb-key';
+        key.textContent = ch;
+        key.addEventListener('mousedown', kbKeyMouseDown);
+        key.addEventListener('click', ()=>{ kbInsertText(ch); if(kbShift){ kbShift = false; renderGlobalKeyboard(); } });
+        rowEl.appendChild(key);
+      });
+      kb.appendChild(rowEl);
+    });
+    const lastRow = document.createElement('div');
+    lastRow.className = 'gkb-row bottom-row';
+    const shift = document.createElement('div');
+    shift.className = 'gkb-key shift' + (kbShift ? ' active' : '');
+    shift.innerHTML = '<ion-icon name="arrow-up"></ion-icon>';
+    shift.addEventListener('mousedown', kbKeyMouseDown);
+    shift.addEventListener('click', ()=>{ kbShift = !kbShift; renderGlobalKeyboard(); });
+    lastRow.appendChild(shift);
+    KB_LETTERS_LAST_ROW.forEach(c=>{
+      const ch = kbShift ? c.toUpperCase() : c;
+      const key = document.createElement('div');
+      key.className = 'gkb-key';
+      key.textContent = ch;
+      key.addEventListener('mousedown', kbKeyMouseDown);
+      key.addEventListener('click', ()=>{ kbInsertText(ch); if(kbShift){ kbShift = false; renderGlobalKeyboard(); } });
+      lastRow.appendChild(key);
+    });
+    const back = document.createElement('div');
+    back.className = 'gkb-key back';
+    back.innerHTML = '<ion-icon name="backspace-outline"></ion-icon>';
+    back.addEventListener('mousedown', kbKeyMouseDown);
+    back.addEventListener('click', kbBackspace);
+    lastRow.appendChild(back);
+    kb.appendChild(lastRow);
+  } else {
+    const rows = kbLayer === 'numbers' ? KB_NUMBERS : KB_SYMBOLS;
+    const lastRowChars = kbLayer === 'numbers' ? KB_NUMBERS_LAST_ROW : KB_SYMBOLS_LAST_ROW;
+    rows.forEach(chars=>{
+      const rowEl = document.createElement('div');
+      rowEl.className = 'gkb-row';
+      chars.forEach(c=>{
+        const key = document.createElement('div');
+        key.className = 'gkb-key';
+        key.textContent = c;
+        key.addEventListener('mousedown', kbKeyMouseDown);
+        key.addEventListener('click', ()=> kbInsertText(c));
+        rowEl.appendChild(key);
+      });
+      kb.appendChild(rowEl);
+    });
+    const lastRow = document.createElement('div');
+    lastRow.className = 'gkb-row bottom-row';
+    const switchLayerKey = document.createElement('div');
+    switchLayerKey.className = 'gkb-key shift';
+    switchLayerKey.textContent = kbLayer === 'numbers' ? '#+=' : '123';
+    switchLayerKey.addEventListener('mousedown', kbKeyMouseDown);
+    switchLayerKey.addEventListener('click', ()=>{ kbLayer = kbLayer === 'numbers' ? 'symbols' : 'numbers'; renderGlobalKeyboard(); shiftSearchBarAboveKeyboard(true); });
+    lastRow.appendChild(switchLayerKey);
+    lastRowChars.forEach(c=>{
+      const key = document.createElement('div');
+      key.className = 'gkb-key';
+      key.textContent = c;
+      key.addEventListener('mousedown', kbKeyMouseDown);
+      key.addEventListener('click', ()=> kbInsertText(c));
+      lastRow.appendChild(key);
+    });
+    const back = document.createElement('div');
+    back.className = 'gkb-key back';
+    back.innerHTML = '<ion-icon name="backspace-outline"></ion-icon>';
+    back.addEventListener('mousedown', kbKeyMouseDown);
+    back.addEventListener('click', kbBackspace);
+    lastRow.appendChild(back);
+    kb.appendChild(lastRow);
+  }
+
+  const spaceRow = document.createElement('div');
+  spaceRow.className = 'gkb-row';
+  const modeToggle = document.createElement('div');
+  modeToggle.className = 'gkb-key wide';
+  modeToggle.textContent = kbLayer === 'letters' ? '123' : 'ABC';
+  modeToggle.addEventListener('mousedown', kbKeyMouseDown);
+  modeToggle.addEventListener('click', ()=>{ kbLayer = kbLayer === 'letters' ? 'numbers' : 'letters'; renderGlobalKeyboard(); shiftSearchBarAboveKeyboard(true); });
+  spaceRow.appendChild(modeToggle);
+  const space = document.createElement('div');
+  space.className = 'gkb-key space';
+  space.textContent = ' ';
+  space.addEventListener('mousedown', kbKeyMouseDown);
+  space.addEventListener('click', ()=> kbInsertText(' '));
+  spaceRow.appendChild(space);
+  const enter = document.createElement('div');
+  enter.className = 'gkb-key wide';
+  enter.innerHTML = '<ion-icon name="return-down-back-outline"></ion-icon>';
+  enter.addEventListener('mousedown', kbKeyMouseDown);
+  enter.addEventListener('click', kbEnter);
+  spaceRow.appendChild(enter);
+  kb.appendChild(spaceRow);
+}
+
+/* ========================= SPOTLIGHT SEARCH ========================= */
+let searchOpen = false;
+const SIRI_SUGGESTIONS = ['safari', 'music', 'calc', 'calendar'];
+
+function renderSiriSuggestions(){
+  const row = document.getElementById('siri-suggest-row');
+  row.innerHTML = '';
+  SIRI_SUGGESTIONS.forEach(id=>{
+    const meta = APP_META[id];
+    if(!meta) return;
+    const item = document.createElement('div');
+    item.className = 'siri-suggest-item';
+    item.innerHTML = `<div class="app-icon ${meta.cls}"></div><span>${escapeHtml(meta.label)}</span>`;
+    item.addEventListener('click', ()=>{ closeSearch(); openApp(id); });
+    row.appendChild(item);
+  });
+}
+
+function syncSearchClock(){
+  const el = document.getElementById('search-clock');
+  if(el) el.textContent = notifTimeLabel();
+}
+
+function openSearch(){
+  searchOpen = true;
+  document.getElementById('search-overlay').classList.add('open');
+  document.getElementById('search-input').value = '';
+  renderSiriSuggestions();
+  syncSearchClock();
+  performSearch('');
+  setTimeout(()=> document.getElementById('search-input').focus(), 300);
+}
+function closeSearch(){
+  searchOpen = false;
+  document.getElementById('search-overlay').classList.remove('open');
+  document.getElementById('search-input').blur();
+}
+
+/* ---- On-screen keyboard (tap-to-insert, since this isn't a native input context) ---- */
+/* Swipe down from the middle of the home screen to open Search */
+(function(){
+  const screenEl = document.getElementById('screen');
+  let tracking = false;
+  let startY = 0, currentY = 0;
+  const TOP_EXCLUDE_ZONE = 50; // avoid overlapping the lock-screen / control-center trigger zones at the very top
+  const SIDE_EXCLUDE_FRACTION = 0.28; // must start roughly in the middle 44% of the width
+  const OPEN_THRESHOLD = 60;
+
+  function pointFromEvent(e){
+    if(e.touches && e.touches.length) return {x:e.touches[0].clientX, y:e.touches[0].clientY};
+    if(e.changedTouches && e.changedTouches.length) return {x:e.changedTouches[0].clientX, y:e.changedTouches[0].clientY};
+    return {x:e.clientX, y:e.clientY};
+  }
+
+  function onStart(e){
+    if(currentApp !== 'home') return;
+    if(document.getElementById('lock-screen').classList.contains('open')) return;
+    if(document.getElementById('control-center').classList.contains('open')) return;
+    if(searchOpen) return;
+    const rect = screenEl.getBoundingClientRect();
+    const p = pointFromEvent(e);
+    const localY = p.y - rect.top;
+    const localX = p.x - rect.left;
+    if(localY < TOP_EXCLUDE_ZONE) return; // that zone belongs to lock screen / control center swipes
+    if(localX < rect.width * SIDE_EXCLUDE_FRACTION || localX > rect.width * (1 - SIDE_EXCLUDE_FRACTION)) return;
+    tracking = true;
+    startY = p.y; currentY = p.y;
+    document.getElementById('search-overlay').style.transition = 'none';
+  }
+
+  function onMove(e){
+    if(!tracking) return;
+    const p = pointFromEvent(e);
+    currentY = p.y;
+    let dy = currentY - startY;
+    if(dy < 0) dy = 0;
+    const overlay = document.getElementById('search-overlay');
+    const progress = Math.min(dy / 200, 1);
+    overlay.style.transform = `translateY(${-100 + progress*100}%)`;
+    overlay.style.opacity = String(progress);
+    overlay.style.pointerEvents = progress > 0 ? 'auto' : 'none';
+    if(e.cancelable && dy > 5) e.preventDefault();
+  }
+
+  function onEnd(){
+    if(!tracking) return;
+    tracking = false;
+    const dy = Math.max(0, currentY - startY);
+    const overlay = document.getElementById('search-overlay');
+    overlay.style.transition = '';
+    overlay.style.transform = '';
+    overlay.style.opacity = '';
+    overlay.style.pointerEvents = '';
+    if(dy > OPEN_THRESHOLD){
+      openSearch();
+    } else {
+      closeSearch();
+    }
+  }
+
+  screenEl.addEventListener('touchstart', onStart, {passive:true});
+  screenEl.addEventListener('touchmove', onMove, {passive:false});
+  screenEl.addEventListener('touchend', onEnd);
+  screenEl.addEventListener('touchcancel', onEnd);
+
+  screenEl.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', function(e){ if(tracking) onMove(e); });
+  window.addEventListener('mouseup', onEnd);
+})();
+
+function performSearch(query){
+  const q = query.trim().toLowerCase();
+  const container = document.getElementById('search-suggestions-scroll');
+
+  if(!q){
+    container.innerHTML = `
+      <div class="search-siri-title"><span>Siri Suggestions</span></div>
+      <div class="siri-suggest-row" id="siri-suggest-row"></div>
+    `;
+    renderSiriSuggestions();
+    return;
+  }
+
+  // Apps
+  const appMatches = Object.keys(APP_META).filter(id => APP_META[id].label.toLowerCase().includes(q));
+
+  // Notes
+  const noteMatches = notes.filter(n =>
+    (n.body || '').toLowerCase().includes(q) || (n.title || '').toLowerCase().includes(q)
+  );
+
+  // Calendar events
+  const eventMatches = [];
+  Object.keys(calEvents).forEach(key=>{
+    (calEvents[key] || []).forEach(ev=>{
+      if(ev.title.toLowerCase().includes(q)){
+        const [y,m,d] = key.split('-').map(Number);
+        eventMatches.push({...ev, dateKey:key, dateLabel: `${monthNames[m]} ${d}`});
+      }
+    });
+  });
+
+  container.innerHTML = '';
+  if(!appMatches.length && !noteMatches.length && !eventMatches.length){
+    container.innerHTML = '<div class="search-empty-hint">No results</div>';
+    return;
+  }
+
+  const card = document.createElement('div');
+  card.className = 'search-group-card';
+
+  appMatches.forEach(id=>{
+    const meta = APP_META[id];
+    const row = document.createElement('div');
+    row.className = 'search-result-row';
+    row.innerHTML = `<div class="search-result-icon app-icon ${meta.cls}"></div><div class="search-result-text"><div class="search-result-title">${escapeHtml(meta.label)}</div><div class="search-result-sub">App</div></div><ion-icon class="search-result-chev" name="chevron-forward"></ion-icon>`;
+    row.addEventListener('click', ()=>{ closeSearch(); openApp(id); });
+    card.appendChild(row);
+  });
+
+  noteMatches.forEach(n=>{
+    const firstLine = (n.body.split('\n')[0] || 'New Note');
+    const row = document.createElement('div');
+    row.className = 'search-result-row';
+    row.innerHTML = `<div class="search-result-icon"><ion-icon name="document-text"></ion-icon></div><div class="search-result-text"><div class="search-result-title">${escapeHtml(firstLine)}</div><div class="search-result-sub">Notes</div></div><ion-icon class="search-result-chev" name="chevron-forward"></ion-icon>`;
+    row.addEventListener('click', ()=>{ closeSearch(); openApp('notes'); openNoteEditor(n.id); });
+    card.appendChild(row);
+  });
+
+  eventMatches.forEach(ev=>{
+    const row = document.createElement('div');
+    row.className = 'search-result-row';
+    row.innerHTML = `<div class="search-result-icon" style="background:#fff;color:#ff453a;"><ion-icon name="calendar"></ion-icon></div><div class="search-result-text"><div class="search-result-title">${escapeHtml(ev.title)}</div><div class="search-result-sub">${escapeHtml(ev.dateLabel)} · ${escapeHtml(ev.time)}</div></div><ion-icon class="search-result-chev" name="chevron-forward"></ion-icon>`;
+    row.addEventListener('click', ()=>{
+      closeSearch();
+      const [y,m,d] = ev.dateKey.split('-').map(Number);
+      calSelected = new Date(y,m,d);
+      calViewDate = new Date(y,m,1);
+      openApp('calendar');
+      if(typeof calRender === 'function') calRender();
+    });
+    card.appendChild(row);
+  });
+
+  container.appendChild(card);
+}
+
+
+async function pSave(key, value){
+  try{
+    localStorage.setItem('iphone-emu:' + key, JSON.stringify(value));
+  }catch(err){ console.error('Storage save failed for', key, err); }
+}
+async function pLoad(key){
+  try{
+    const raw = localStorage.getItem('iphone-emu:' + key);
+    return raw ? JSON.parse(raw) : null;
+  }catch(err){ return null; } // key doesn't exist, storage unavailable, or JSON was corrupted
+}
+
+/* ========================= HOME SCREEN GRID (data-driven, drag/reorder/folders) ========================= */
+const APP_META = {
+  calc:      {label:'Calculator', cls:'calc'},
+  notes:     {label:'Notes',      cls:'notes'},
+  clock:     {label:'Clock',      cls:'clock'},
+  weather:   {label:'Weather',    cls:'weather'},
+  calendar:  {label:'Calendar',   cls:'calendar'},
+  music:     {label:'Music',      cls:'music'},
+  safari:    {label:'Safari',     cls:'safari'},
+  settings:  {label:'Settings',   cls:'settings'},
+  blink:     {label:'Blink',      cls:'blink'},
+  photos:    {label:'Photos',     cls:'photos'},
+  reminders: {label:'Reminders',  cls:'reminders'},
+  camera:    {label:'Camera',     cls:'camera'},
+};
+const GRID_SLOTS = 16;
+let gridItems = [
+  {type:'app', id:'calc'},
+  {type:'app', id:'notes'},
+  {type:'app', id:'clock'},
+  {type:'app', id:'weather'},
+  {type:'app', id:'calendar'},
+  {type:'app', id:'music'},
+  {type:'app', id:'safari'},
+  {type:'app', id:'settings'},
+  {type:'app', id:'blink'},
+  {type:'app', id:'photos'},
+  {type:'app', id:'reminders'},
+  {type:'app', id:'camera'},
+];
+while(gridItems.length < GRID_SLOTS) gridItems.push({type:'empty'});
+
+function renderCalendarIconContent(el){
+  const day = new Date().getDate();
+  const weekday = ['SUN','MON','TUE','WED','THU','FRI','SAT'][new Date().getDay()];
+  el.innerHTML = `
+    <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; overflow:hidden;">
+      <div style="width:100%; text-align:center; color:#ff3b30; font-size:11px; font-weight:700; letter-spacing:0.5px; padding:5px 0 1px; font-family:-apple-system, sans-serif;">${weekday}</div>
+      <div style="flex:1; display:flex; align-items:center; justify-content:center; width:100%;">
+        <div style="color:#1c1c1e; font-size:30px; font-weight:600; line-height:1; font-family:-apple-system, sans-serif; margin-top:-4px;">${day}</div>
+      </div>
+    </div>
+  `;
+}
+
+function squircleBoundaryDist(rad, half, cornerRadius, inset){
+  const dx = Math.cos(rad), dy = Math.sin(rad);
+  const absDx = Math.abs(dx), absDy = Math.abs(dy);
+  const maxX = half - inset, maxY = half - inset;
+  const cornerR = cornerRadius - inset;
+  const tEdgeX = absDx > 1e-6 ? maxX/absDx : Infinity;
+  const tEdgeY = absDy > 1e-6 ? maxY/absDy : Infinity;
+  let t = Math.min(tEdgeX, tEdgeY);
+  const px = dx*t, py = dy*t;
+  const cornerCenterX = (maxX - cornerR) * (dx >= 0 ? 1 : -1);
+  const cornerCenterY = (maxY - cornerR) * (dy >= 0 ? 1 : -1);
+  if(Math.abs(px) > maxX - cornerR && Math.abs(py) > maxY - cornerR){
+    const b = -2*(dx*cornerCenterX + dy*cornerCenterY);
+    const c = cornerCenterX*cornerCenterX + cornerCenterY*cornerCenterY - cornerR*cornerR;
+    const disc = b*b - 4*c;
+    if(disc >= 0){
+      const tCorner = (-b + Math.sqrt(disc)) / 2;
+      if(tCorner > 0) t = tCorner;
+    }
+  }
+  return t;
+}
+
+function renderClockIconContent(el){
+  const now = new Date();
+  const h = now.getHours() % 12;
+  const m = now.getMinutes();
+  const s = now.getSeconds();
+  const hourAngle = (h + m/60) * 30;
+  const minAngle = (m + s/60) * 6;
+  const secAngle = s * 6;
+
+  const half = 100, cornerRadius = 30, inset = 4;
+  const skipZone = new Set([0,1,2,58,59, 13,14,15,16,17, 28,29,30,31,32, 43,44,45,46,47]);
+  const ticks = [];
+  for(let i = 0; i < 60; i++){
+    if(skipZone.has(i)) continue; // leave room for the 12/3/6/9 numerals
+    const angleDeg = i * 6;
+    const isHour = i % 5 === 0;
+    const tickLen = isHour ? 11 : 4.5;
+    const width = isHour ? 2.8 : 1.5;
+    const rad = (angleDeg - 90) * Math.PI / 180;
+    const boundaryR = squircleBoundaryDist(rad, half, cornerRadius, inset);
+    const r2 = boundaryR - 1;
+    const r1 = r2 - tickLen;
+    const x1 = half + r1 * Math.cos(rad), y1 = half + r1 * Math.sin(rad);
+    const x2 = half + r2 * Math.cos(rad), y2 = half + r2 * Math.sin(rad);
+    ticks.push(`<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="#fff" stroke-width="${width}" stroke-linecap="round"/>`);
+  }
+
+  el.innerHTML = `
+    <svg viewBox="0 0 200 200" style="width:100%; height:100%; position:absolute; inset:0;">
+      ${ticks.join('')}
+      <text x="100" y="38" text-anchor="middle" fill="#e8e8e8" font-size="17" font-weight="500" font-family="-apple-system, sans-serif">12</text>
+      <text x="164" y="106" text-anchor="middle" fill="#e8e8e8" font-size="17" font-weight="500" font-family="-apple-system, sans-serif">3</text>
+      <text x="100" y="174" text-anchor="middle" fill="#e8e8e8" font-size="17" font-weight="500" font-family="-apple-system, sans-serif">6</text>
+      <text x="36" y="106" text-anchor="middle" fill="#e8e8e8" font-size="17" font-weight="500" font-family="-apple-system, sans-serif">9</text>
+      <g transform="rotate(${hourAngle} 100 100)"><line x1="100" y1="100" x2="100" y2="48" stroke="#fff" stroke-width="6" stroke-linecap="round"/></g>
+      <g transform="rotate(${minAngle} 100 100)"><line x1="100" y1="100" x2="100" y2="26" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/></g>
+      <g transform="rotate(${secAngle} 100 100)">
+        <line x1="100" y1="112" x2="100" y2="20" stroke="#ff9f0a" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="100" cy="100" r="4.4" fill="#ff9f0a"/>
+      </g>
+      <circle cx="100" cy="100" r="2.6" fill="#fff"/>
+    </svg>
+  `;
+}
+
+function buildAppIconEl(appId, sizeStyle){
+  const meta = APP_META[appId];
+  const el = document.createElement('div');
+  el.className = 'app-icon ' + (meta ? meta.cls : '');
+  if(sizeStyle) el.setAttribute('style', sizeStyle);
+  if(appId === 'calendar') renderCalendarIconContent(el);
+  if(appId === 'clock') renderClockIconContent(el);
+  if(appId === 'reminders') el.innerHTML = '<ion-icon name="list" style="color:#ff9500; font-size:60%;"></ion-icon>';
+  return el;
+}
+
+function renderGrid(){
+  const grid = document.getElementById('app-grid');
+  grid.innerHTML = '';
+  gridItems.forEach((item, idx)=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'app-icon-wrap';
+    wrap.dataset.idx = idx;
+
+    if(item.type === 'app'){
+      const meta = APP_META[item.id];
+      if(!meta){ wrap.classList.add('empty-slot'); grid.appendChild(wrap); return; }
+      const iconEl = buildAppIconEl(item.id);
+      wrap.appendChild(iconEl);
+      const label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = meta.label;
+      wrap.appendChild(label);
+      wrap.addEventListener('click', function(){ openApp(item.id); });
+    } else {
+      // 'empty' slots, and any legacy 'folder' items from previously saved layouts, render as empty
+      wrap.classList.add('empty-slot');
+    }
+
+    grid.appendChild(wrap);
+  });
+}
+
+function pSaveGrid(){
+  pSave('home-grid', gridItems);
+}
+
+(async function loadGrid(){
+  const saved = await pLoad('home-grid');
+  if(saved && Array.isArray(saved) && saved.length){
+    gridItems = saved;
+    while(gridItems.length < GRID_SLOTS) gridItems.push({type:'empty'});
+  }
+  renderGrid();
+})();
+
+/* ========================= NAVIGATION ========================= */
+let currentApp = 'home';
+
+function openApp(id){
+  document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const previousApp = currentApp;
+  currentApp = id;
+  // If the previously focused field isn't inside the screen we're switching to, drop focus so the keyboard hides
+  const active = document.activeElement;
+  if(active && isTypableField(active) && !document.getElementById(id).contains(active)){
+    active.blur();
+  }
+  if(id==='weather' && !window.__wxLoaded){ loadWeather(); }
+  if(id==='music' && !window.__musicRendered){ renderPlaylist(); }
+  if(id==='wallpaper-settings' && typeof wpSyncPreview === 'function'){ wpSyncPreview(); }
+  if(id==='camera' && typeof cameraStart === 'function'){ cameraStart(); }
+  if(previousApp==='camera' && id!=='camera' && typeof cameraStop === 'function'){ cameraStop(); }
+}
+function goHome(){ openApp('home'); }
+
+/* ========================= CONTROL CENTER ========================= */
+function openControlCenter(){
+  document.getElementById('control-center').classList.add('open');
+  document.getElementById('cc-backdrop').classList.add('visible');
+  ccSyncMusic();
+}
+function closeControlCenter(){
+  document.getElementById('control-center').classList.remove('open');
+  document.getElementById('cc-backdrop').classList.remove('visible');
+}
+function ccToggle(el){ el.classList.toggle('on'); }
+function ccSliderClick(e, kind){
+  const card = e.currentTarget;
+  const rect = card.getBoundingClientRect();
+  const y = (e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY) - rect.top;
+  let pct = Math.max(0, Math.min(1, 1 - (y / rect.height)));
+  document.getElementById('cc-'+kind+'-fill').style.height = (pct*100)+'%';
+}
+function ccSyncMusic(){
+  const t = playlist[musicIdx];
+  const titleEl = document.getElementById('cc-mini-title');
+  const artistEl = document.getElementById('cc-mini-artist');
+  if(musicPlaying){
+    titleEl.textContent = t.title;
+    artistEl.textContent = t.artist;
+  } else {
+    titleEl.textContent = 'Not Playing';
+    artistEl.textContent = '';
+  }
+  const icon = document.getElementById('cc-mini-play');
+  icon.setAttribute('name', musicPlaying ? 'pause' : 'play');
+}
+
+/* ========================= SWIPE DOWN FOR CONTROL CENTER ========================= */
+(function(){
+  const screenEl = document.getElementById('screen');
+  let tracking = false;
+  let startY = 0, startX = 0, currentY = 0, opened = false;
+  const TOP_ZONE = 50; // px from top where the swipe can start
+  const RIGHT_ZONE_FRACTION = 0.5; // must start in the right half of the screen
+  const OPEN_THRESHOLD = 60;
+
+  function pointFromEvent(e){
+    if(e.touches && e.touches.length) return {x:e.touches[0].clientX, y:e.touches[0].clientY};
+    if(e.changedTouches && e.changedTouches.length) return {x:e.changedTouches[0].clientX, y:e.changedTouches[0].clientY};
+    return {x:e.clientX, y:e.clientY};
+  }
+
+  function onStart(e){
+    if(document.getElementById('lock-screen').classList.contains('open')) return; // lock screen owns gestures while open
+    if(searchOpen) return;
+    if(e.target.closest && e.target.closest('#dynamic-island')) return; // island owns its own taps
+    const rect = screenEl.getBoundingClientRect();
+    const p = pointFromEvent(e);
+    const localY = p.y - rect.top;
+    const localX = p.x - rect.left;
+    if(localY > TOP_ZONE) return;
+    if(localX < rect.width * RIGHT_ZONE_FRACTION) return; // only top-right
+    if(document.getElementById('control-center').classList.contains('open')) return;
+    tracking = true; opened = false;
+    startY = p.y; startX = p.x; currentY = p.y;
+    document.getElementById('control-center').style.transition = 'none';
+  }
+
+  function onMove(e){
+    if(!tracking) return;
+    const p = pointFromEvent(e);
+    currentY = p.y;
+    let dy = currentY - startY;
+    if(dy < 0) dy = 0;
+    const cc = document.getElementById('control-center');
+    const progress = Math.min(dy / 200, 1);
+    cc.style.transform = `translateY(${-100 + progress*100}%)`;
+    document.getElementById('cc-backdrop').style.opacity = String(progress);
+    document.getElementById('cc-backdrop').style.pointerEvents = progress > 0 ? 'auto' : 'none';
+    if(e.cancelable && dy > 5) e.preventDefault();
+  }
+
+  function onEnd(){
+    if(!tracking) return;
+    tracking = false;
+    const dy = Math.max(0, currentY - startY);
+    const cc = document.getElementById('control-center');
+    cc.style.transition = '';
+    cc.style.transform = '';
+    document.getElementById('cc-backdrop').style.opacity = '';
+    document.getElementById('cc-backdrop').style.pointerEvents = '';
+    if(dy > OPEN_THRESHOLD){
+      openControlCenter();
+    } else {
+      closeControlCenter();
+    }
+  }
+
+  screenEl.addEventListener('touchstart', onStart, {passive:true});
+  screenEl.addEventListener('touchmove', onMove, {passive:false});
+  screenEl.addEventListener('touchend', onEnd);
+  screenEl.addEventListener('touchcancel', onEnd);
+
+  screenEl.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', function(e){ if(tracking) onMove(e); });
+  window.addEventListener('mouseup', onEnd);
+})();
+
+
+/* ========================= LOCK SCREEN ========================= */
+function openLockScreen(){
+  document.getElementById('lock-screen').classList.add('open');
+}
+function closeLockScreen(){
+  document.getElementById('lock-screen').classList.remove('open');
+}
+function updateLockClock(){
+  const now = new Date();
+  const h24 = now.getHours(), m = now.getMinutes();
+  const timeStr = `${h24===0?12:(h24>12?h24-12:h24)}:${pad(m)}`;
+  const dateStr = now.toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'});
+  const timeEl = document.getElementById('lock-time');
+  const dateEl = document.getElementById('lock-date');
+  if(timeEl) timeEl.textContent = timeStr;
+  if(dateEl) dateEl.textContent = dateStr;
+}
+updateLockClock();
+setInterval(updateLockClock, 1000*10);
+
+/* Swipe down from top-LEFT to open lock screen; swipe up on lock screen to dismiss */
+(function(){
+  const screenEl = document.getElementById('screen');
+  let tracking = false, mode = null; // 'open' or 'close'
+  let startY = 0, currentY = 0;
+  const TOP_ZONE = 50;
+  const LEFT_ZONE_FRACTION = 0.5;
+  const OPEN_THRESHOLD = 60;
+  const CLOSE_THRESHOLD = 100;
+  const VELOCITY_THRESHOLD = 0.5;
+  let startTime = 0;
+
+  function pointFromEvent(e){
+    if(e.touches && e.touches.length) return {x:e.touches[0].clientX, y:e.touches[0].clientY};
+    if(e.changedTouches && e.changedTouches.length) return {x:e.changedTouches[0].clientX, y:e.changedTouches[0].clientY};
+    return {x:e.clientX, y:e.clientY};
+  }
+  function screenHeight(){ return screenEl.getBoundingClientRect().height; }
+
+  function onStart(e){
+    const lockEl = document.getElementById('lock-screen');
+    const rect = screenEl.getBoundingClientRect();
+    const p = pointFromEvent(e);
+    const localY = p.y - rect.top;
+    const localX = p.x - rect.left;
+
+    if(lockEl.classList.contains('open')){
+      // Any swipe-up on the open lock screen dismisses it
+      mode = 'close';
+      tracking = true;
+      startY = p.y; currentY = p.y; startTime = Date.now();
+      lockEl.style.transition = 'none';
+      return;
+    }
+    // Otherwise, only open from top-left zone
+    if(e.target.closest && e.target.closest('#dynamic-island')) return; // island owns its own taps
+    if(localY > TOP_ZONE) return;
+    if(localX > rect.width * LEFT_ZONE_FRACTION) return;
+    if(document.getElementById('control-center').classList.contains('open')) return;
+    if(searchOpen) return;
+    mode = 'open';
+    tracking = true;
+    startY = p.y; currentY = p.y; startTime = Date.now();
+    lockEl.style.transition = 'none';
+  }
+
+  function onMove(e){
+    if(!tracking) return;
+    const p = pointFromEvent(e);
+    currentY = p.y;
+    const lockEl = document.getElementById('lock-screen');
+    if(mode === 'open'){
+      let dy = currentY - startY;
+      if(dy < 0) dy = 0;
+      const progress = Math.min(dy / 250, 1);
+      lockEl.style.transform = `translateY(${-100 + progress*100}%)`;
+      if(e.cancelable && dy > 5) e.preventDefault();
+    } else if(mode === 'close'){
+      let dy = startY - currentY; // positive = dragging up
+      if(dy < 0) dy = 0;
+      const h = screenHeight();
+      const progress = Math.min(dy / h, 1);
+      lockEl.style.transform = `translateY(${-progress*100}%)`;
+      if(e.cancelable && dy > 5) e.preventDefault();
+    }
+  }
+
+  function onEnd(){
+    if(!tracking) return;
+    tracking = false;
+    const lockEl = document.getElementById('lock-screen');
+    lockEl.style.transition = 'transform .32s cubic-bezier(.32,.72,0,1)';
+    if(mode === 'open'){
+      const dy = Math.max(0, currentY - startY);
+      lockEl.style.transform = '';
+      if(dy > OPEN_THRESHOLD){ openLockScreen(); } else { closeLockScreen(); }
+    } else if(mode === 'close'){
+      const dy = Math.max(0, startY - currentY);
+      const elapsed = Math.max(1, Date.now() - startTime);
+      const velocity = dy / elapsed;
+      const shouldClose = dy > CLOSE_THRESHOLD || velocity > VELOCITY_THRESHOLD;
+      if(shouldClose){
+        lockEl.style.transform = 'translateY(-100%)';
+        setTimeout(()=>{
+          lockEl.style.transition = 'none';
+          lockEl.style.transform = '';
+          closeLockScreen();
+        }, 320);
+      } else {
+        lockEl.style.transform = '';
+      }
+    }
+    mode = null;
+  }
+
+  screenEl.addEventListener('touchstart', onStart, {passive:true});
+  screenEl.addEventListener('touchmove', onMove, {passive:false});
+  screenEl.addEventListener('touchend', onEnd);
+  screenEl.addEventListener('touchcancel', onEnd);
+
+  screenEl.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', function(e){ if(tracking) onMove(e); });
+  window.addEventListener('mouseup', onEnd);
+})();
+
+
+(function(){
+  const screenEl = document.getElementById('screen');
+  let tracking = false;
+  let startY = 0, startX = 0, currentY = 0;
+  let activeEl = null;
+  const CLOSE_ZONE = 40; // px from bottom edge where a swipe-up-to-close can start
+  const CLOSE_THRESHOLD = 100; // px dragged to trigger close
+  const VELOCITY_THRESHOLD = 0.5; // px/ms
+
+  function screenHeight(){ return screenEl.getBoundingClientRect().height; }
+
+  function pointFromEvent(e){
+    if(e.touches && e.touches.length) return {x:e.touches[0].clientX, y:e.touches[0].clientY};
+    if(e.changedTouches && e.changedTouches.length) return {x:e.changedTouches[0].clientX, y:e.changedTouches[0].clientY};
+    return {x:e.clientX, y:e.clientY};
+  }
+
+  let startTime = 0;
+  let homeZoomTracking = false;
+  let homeZoomStartY = 0;
+
+  function onStart(e){
+    if(document.getElementById('lock-screen').classList.contains('open')) return; // lock screen owns gestures while open
+    if(searchOpen) return; // search owns its own taps/swipes while open
+    const rect = screenEl.getBoundingClientRect();
+    const p = pointFromEvent(e);
+    const localY = p.y - rect.top;
+    const fromBottom = rect.height - localY;
+    if(fromBottom > CLOSE_ZONE) return; // only start the gesture from the bottom home-indicator zone
+
+    if(currentApp === 'home'){
+      // On the home screen, swiping up briefly zooms the icons out (cosmetic, like real iOS), then bounces back
+      homeZoomTracking = true;
+      homeZoomStartY = p.y;
+      const grid = document.getElementById('app-grid');
+      const dock = document.querySelector('.dock');
+      if(grid) grid.style.transition = 'none';
+      if(dock) dock.style.transition = 'none';
+      return;
+    }
+
+    activeEl = document.querySelector('.app-screen.active');
+    if(!activeEl) return;
+    tracking = true;
+    startY = p.y; startX = p.x; currentY = p.y;
+    startTime = Date.now();
+    activeEl.style.transition = 'none';
+    activeEl.style.transformOrigin = 'center center';
+    activeEl.style.borderRadius = '38px'; // round the corners immediately, like real iOS
+    activeEl.style.zIndex = '10';
+    // Reveal the home screen live underneath the app being dragged, like real iOS
+    const homeEl = document.getElementById('home');
+    homeEl.classList.add('active');
+    homeEl.style.zIndex = '1';
+  }
+
+  function onMove(e){
+    if(homeZoomTracking){
+      const p = pointFromEvent(e);
+      let dy = homeZoomStartY - p.y;
+      if(dy < 0) dy = 0;
+      const progress = Math.min(dy / 220, 1);
+      const scale = 1 - progress * 0.22;
+      const grid = document.getElementById('app-grid');
+      const dock = document.querySelector('.dock');
+      if(grid) grid.style.transform = `scale(${scale})`;
+      if(dock) dock.style.transform = `scale(${scale})`;
+      if(e.cancelable) e.preventDefault();
+      return;
+    }
+    if(!tracking || !activeEl) return;
+    const p = pointFromEvent(e);
+    currentY = p.y;
+    let dy = startY - currentY; // positive = dragging up
+    if(dy < 0) dy = 0;
+    const h = screenHeight();
+    const progress = Math.min(dy / h, 1);
+    const translate = -progress * h * 0.42; // move up toward center
+    const scale = 1 - progress * 0.32; // shrink noticeably toward center, like real iOS
+    activeEl.style.transform = `translateY(${translate}px) scale(${scale})`;
+    activeEl.style.opacity = String(1 - progress * 0.35);
+    if(e.cancelable) e.preventDefault();
+  }
+
+  function onEnd(){
+    if(homeZoomTracking){
+      homeZoomTracking = false;
+      const grid = document.getElementById('app-grid');
+      const dock = document.querySelector('.dock');
+      if(grid){ grid.style.transition = 'transform .3s cubic-bezier(.32,.72,0,1)'; grid.style.transform = ''; }
+      if(dock){ dock.style.transition = 'transform .3s cubic-bezier(.32,.72,0,1)'; dock.style.transform = ''; }
+      return;
+    }
+    if(!tracking || !activeEl) return;
+    tracking = false;
+    const dy = Math.max(0, startY - currentY);
+    const elapsed = Math.max(1, Date.now() - startTime);
+    const velocity = dy / elapsed;
+    const shouldClose = dy > CLOSE_THRESHOLD || velocity > VELOCITY_THRESHOLD;
+    const el = activeEl;
+    activeEl = null;
+    const homeEl = document.getElementById('home');
+    el.style.transition = 'transform .28s cubic-bezier(.32,.72,0,1), opacity .28s, border-radius .28s';
+    if(shouldClose){
+      const h = screenHeight();
+      const wasCamera = el.id === 'camera';
+      el.style.transform = `translateY(${-h * 0.42}px) scale(0.7)`;
+      el.style.opacity = '0';
+      setTimeout(()=>{
+        el.style.transition = 'none';
+        el.style.transform = '';
+        el.style.opacity = '';
+        el.style.borderRadius = '';
+        el.style.zIndex = '';
+        el.classList.remove('active');
+        homeEl.style.zIndex = '';
+        currentApp = 'home';
+        if(wasCamera && typeof cameraStop === 'function') cameraStop();
+      }, 260);
+    } else {
+      el.style.transform = '';
+      el.style.opacity = '';
+      el.style.borderRadius = '';
+      setTimeout(()=>{
+        el.style.transition = 'none';
+        el.style.zIndex = '';
+        homeEl.classList.remove('active');
+        homeEl.style.zIndex = '';
+      }, 280);
+    }
+  }
+
+  screenEl.addEventListener('touchstart', onStart, {passive:true});
+  screenEl.addEventListener('touchmove', onMove, {passive:false});
+  screenEl.addEventListener('touchend', onEnd);
+  screenEl.addEventListener('touchcancel', onEnd);
+
+  screenEl.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', function(e){ if(tracking) onMove(e); });
+  window.addEventListener('mouseup', onEnd);
+})();
+
+
+/* ========================= CLOCK / STATUS BAR ========================= */
+function pad(n){ return n.toString().padStart(2,'0'); }
+function updateAllClocks(){
+  const now = new Date();
+  const h24 = now.getHours(), m = now.getMinutes();
+  const timeStr = `${h24===0?12:(h24>12?h24-12:h24)}:${pad(m)}`;
+  document.querySelectorAll('[id^="clk-"]').forEach(el=>{ if(el.id.indexOf('current')===-1) el.textContent = timeStr; });
+  const acEl = document.getElementById('alarm-current-time');
+  if(acEl) acEl.textContent = timeStr;
+}
+setInterval(updateAllClocks, 1000*10);
+updateAllClocks();
+
+function updateLiveAppIcons(){
+  // Keep the Clock icon's hands ticking and the Calendar icon's date/weekday current,
+  // wherever they're currently rendered (home grid, dock, etc).
+  document.querySelectorAll('.app-icon.clock').forEach(el => { if(typeof renderClockIconContent === 'function') renderClockIconContent(el); });
+  document.querySelectorAll('.app-icon.calendar').forEach(el => { if(typeof renderCalendarIconContent === 'function') renderCalendarIconContent(el); });
+}
+setInterval(updateLiveAppIcons, 1000);
+
+/* ========================= CALCULATOR ========================= */
+let calcState = { display:'0', prev:null, op:null, waitingNew:false };
+function calcRender(){
+  document.getElementById('calc-display').textContent = calcState.display;
+  document.querySelectorAll('.calc-btn.op').forEach(b=>b.classList.remove('active-op'));
+}
+function calcFormat(n){
+  if(!isFinite(n)) return 'Error';
+  let s = n.toString();
+  if(s.length>10) s = parseFloat(n.toPrecision(10)).toString();
+  return s;
+}
+function calcNum(d){
+  if(calcState.waitingNew || calcState.display==='0'){
+    calcState.display = d;
+    calcState.waitingNew = false;
+  } else {
+    if(calcState.display.replace('-','').replace('.','').length>=10) return;
+    calcState.display += d;
+  }
+  document.getElementById('calc-clear').textContent = 'C';
+  calcRender();
+}
+function calcDot(){
+  if(calcState.waitingNew){ calcState.display='0.'; calcState.waitingNew=false; calcRender(); return; }
+  if(!calcState.display.includes('.')) calcState.display += '.';
+  calcRender();
+}
+function calcClear(){
+  calcState = { display:'0', prev:null, op:null, waitingNew:false };
+  document.getElementById('calc-clear').textContent = 'AC';
+  calcRender();
+}
+function calcSign(){
+  calcState.display = (parseFloat(calcState.display) * -1).toString();
+  calcRender();
+}
+function calcPercent(){
+  calcState.display = (parseFloat(calcState.display) / 100).toString();
+  calcRender();
+}
+function calcOp(op){
+  if(calcState.op && !calcState.waitingNew){ calcEquals(); }
+  calcState.prev = parseFloat(calcState.display);
+  calcState.op = op;
+  calcState.waitingNew = true;
+  document.querySelectorAll('.calc-btn.op').forEach(b=>{
+    b.classList.toggle('active-op', b.textContent===op);
+  });
+}
+function calcEquals(){
+  if(calcState.op===null || calcState.prev===null) return;
+  const cur = parseFloat(calcState.display);
+  let result;
+  switch(calcState.op){
+    case '+': result = calcState.prev + cur; break;
+    case '−': result = calcState.prev - cur; break;
+    case '×': result = calcState.prev * cur; break;
+    case '÷': result = cur===0 ? Infinity : calcState.prev / cur; break;
+  }
+  calcState.display = calcFormat(result);
+  calcState.op = null; calcState.prev = null; calcState.waitingNew = true;
+  calcRender();
+}
+calcRender();
+
+/* ========================= NOTES ========================= */
+let notes = [
+  {id:1, title:'Welcome', body:'Welcome to Notes.\n\nTap + to create a new note. Everything is stored in memory for this session.', date:'Today'},
+];
+let currentNoteId = null;
+function renderNotesList(){
+  const list = document.getElementById('notes-list');
+  list.innerHTML = '';
+  notes.slice().reverse().forEach(n=>{
+    const row = document.createElement('div');
+    row.className = 'note-row';
+    const firstLine = (n.body.split('\n')[0] || n.title || 'New Note');
+    const preview = (n.body.split('\n').slice(1).join(' ') || '').slice(0,40);
+    row.innerHTML = `<div class="nt">${escapeHtml(firstLine || 'New Note')}</div><div class="nm"><span>${n.date}</span><span>${escapeHtml(preview)}</span></div>`;
+    row.onclick = ()=> openNoteEditor(n.id);
+    list.appendChild(row);
+  });
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function newNote(){
+  const id = Date.now();
+  notes.push({id, title:'', body:'', date:'Now'});
+  openNoteEditor(id);
+}
+function openNoteEditor(id){
+  currentNoteId = id;
+  const n = notes.find(x=>x.id===id);
+  document.getElementById('note-textarea').value = n ? n.body : '';
+  document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('note-editor').classList.add('active');
+  currentApp = 'note-editor';
+  setTimeout(()=>document.getElementById('note-textarea').focus(), 100);
+}
+function autosaveNote(){
+  const n = notes.find(x=>x.id===currentNoteId);
+  if(n) n.body = document.getElementById('note-textarea').value;
+  pSave('notes', notes);
+}
+function closeNoteEditor(){
+  autosaveNote();
+  const n = notes.find(x=>x.id===currentNoteId);
+  if(n && !n.body.trim()) notes = notes.filter(x=>x.id!==currentNoteId);
+  renderNotesList();
+  pSave('notes', notes);
+  document.getElementById('note-textarea').blur();
+  openApp('notes');
+}
+function deleteCurrentNote(){
+  notes = notes.filter(x=>x.id!==currentNoteId);
+  renderNotesList();
+  pSave('notes', notes);
+  openApp('notes');
+}
+renderNotesList();
+(async function loadNotes(){
+  const saved = await pLoad('notes');
+  if(saved && Array.isArray(saved) && saved.length){
+    notes = saved;
+    renderNotesList();
+  }
+})();
+
+/* ========================= CLOCK APP ========================= */
+function clockTab(name){
+  document.querySelectorAll('.clock-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.clock-body').forEach(b=>b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('clock-body-'+name).classList.add('active');
+  const titles = {world:'World Clock', alarm:'Alarm', stopwatch:'Stopwatch', timer:'Timer'};
+  document.getElementById('clock-page-title').textContent = titles[name];
+}
+const worldCities = [
+  {city:'Luxembourg', tz:'Europe/Luxembourg'},
+  {city:'London', tz:'Europe/London'},
+  {city:'New York', tz:'America/New_York'},
+  {city:'Toronto', tz:'America/Toronto'},
+  {city:'Tokyo', tz:'Asia/Tokyo'},
+  {city:'Hong Kong', tz:'Asia/Hong_Kong'},
+  {city:'Singapore', tz:'Asia/Singapore'},
+  {city:'Sydney', tz:'Australia/Sydney'},
+];
+function renderWorldClocks(){
+  const el = document.getElementById('world-clock-list');
+  el.innerHTML = '';
+  const now = new Date();
+  worldCities.forEach(c=>{
+    let timeStr, dayDiff;
+    try{
+      timeStr = new Intl.DateTimeFormat('en-GB', {timeZone:c.tz, hour:'2-digit', minute:'2-digit', hour12:false}).format(now);
+      const localDay = new Intl.DateTimeFormat('en-US',{timeZone:c.tz, day:'2-digit'}).format(now);
+      const hereDay = new Intl.DateTimeFormat('en-US',{day:'2-digit'}).format(now);
+      dayDiff = localDay===hereDay ? 'Today' : (parseInt(localDay)>parseInt(hereDay)?'Tomorrow':'Yesterday');
+    }catch(e){ timeStr='--:--'; dayDiff=''; }
+    const row = document.createElement('div');
+    row.className = 'world-clock-row';
+    row.innerHTML = `<div><div class="wc-city">${c.city}</div><div class="wc-diff">${dayDiff}</div></div><div class="wc-time">${timeStr}</div>`;
+    el.appendChild(row);
+  });
+}
+renderWorldClocks();
+setInterval(renderWorldClocks, 30000);
+
+/* Stopwatch */
+let swInterval=null, swElapsed=0, swRunning=false, swLaps=[];
+function swFormat(ms){
+  const m = Math.floor(ms/60000);
+  const s = Math.floor((ms%60000)/1000);
+  const cs = Math.floor((ms%1000)/10);
+  return `${pad(m)}:${pad(s)}.${pad(cs)}`;
+}
+function swToggle(){
+  if(swRunning){
+    clearInterval(swInterval); swRunning=false;
+    document.getElementById('sw-startstop').textContent='Start';
+    document.getElementById('sw-startstop').className='timer-btn start';
+    document.getElementById('sw-lap-btn').textContent='Reset';
+  } else {
+    const startTime = Date.now()-swElapsed;
+    swInterval = setInterval(()=>{
+      swElapsed = Date.now()-startTime;
+      document.getElementById('sw-display').textContent = swFormat(swElapsed);
+    },30);
+    swRunning=true;
+    document.getElementById('sw-startstop').textContent='Stop';
+    document.getElementById('sw-startstop').className='timer-btn stop';
+    document.getElementById('sw-lap-btn').textContent='Lap';
+  }
+}
+function swLap(){
+  if(swRunning){
+    swLaps.unshift(swFormat(swElapsed));
+    const el = document.getElementById('sw-laps');
+    el.innerHTML = swLaps.map((l,i)=>`<div class="lap-row"><span>Lap ${swLaps.length-i}</span><span>${l}</span></div>`).join('');
+  } else {
+    swElapsed=0; swLaps=[];
+    document.getElementById('sw-display').textContent='00:00.00';
+    document.getElementById('sw-laps').innerHTML='';
+    document.getElementById('sw-lap-btn').textContent='Lap';
+  }
+}
+
+/* Timer */
+let timerInterval=null, timerRemaining=300, timerTotal=300, timerRunning=false;
+function timerFormat(sec){
+  const m = Math.floor(sec/60), s = sec%60;
+  return `${pad(m)}:${pad(s)}`;
+}
+function timerRangeChange(v){
+  timerTotal = parseInt(v); timerRemaining = timerTotal;
+  document.getElementById('timer-display').textContent = timerFormat(timerRemaining);
+}
+function timerToggle(){
+  if(timerRunning){
+    clearInterval(timerInterval); timerRunning=false;
+    document.getElementById('timer-startstop').textContent='Start';
+    document.getElementById('timer-startstop').className='timer-btn start';
+  } else {
+    if(timerRemaining<=0) timerRemaining=timerTotal;
+    timerRunning=true;
+    document.getElementById('timer-startstop').textContent='Pause';
+    document.getElementById('timer-startstop').className='timer-btn stop';
+    timerInterval = setInterval(()=>{
+      timerRemaining--;
+      document.getElementById('timer-display').textContent = timerFormat(Math.max(timerRemaining,0));
+      if(timerRemaining<=0){
+        clearInterval(timerInterval); timerRunning=false;
+        document.getElementById('timer-startstop').textContent='Start';
+        document.getElementById('timer-startstop').className='timer-btn start';
+        document.getElementById('timer-display').textContent = "Done!";
+        pushNotification('clock', 'Timer Done', timerFormat(timerTotal) + ' timer has ended');
+      }
+    },1000);
+  }
+}
+function timerReset(){
+  clearInterval(timerInterval); timerRunning=false;
+  timerRemaining = timerTotal;
+  document.getElementById('timer-display').textContent = timerFormat(timerRemaining);
+  document.getElementById('timer-startstop').textContent='Start';
+  document.getElementById('timer-startstop').className='timer-btn start';
+}
+
+/* ========================= WEATHER (Open-Meteo, live) ========================= */
+const wxCodeMap = {
+  0:['Clear sky','sunny'],1:['Mainly clear','partly-sunny'],2:['Partly cloudy','partly-sunny'],3:['Overcast','cloudy'],
+  45:['Fog','cloud'],48:['Fog','cloud'],
+  51:['Light drizzle','rainy-outline'],53:['Drizzle','rainy-outline'],55:['Dense drizzle','rainy'],
+  61:['Light rain','rainy-outline'],63:['Rain','rainy'],65:['Heavy rain','rainy'],
+  71:['Light snow','snow-outline'],73:['Snow','snow'],75:['Heavy snow','snow'],
+  80:['Rain showers','rainy-outline'],81:['Rain showers','rainy'],82:['Violent showers','thunderstorm'],
+  95:['Thunderstorm','thunderstorm'],96:['Thunderstorm','thunderstorm'],99:['Thunderstorm','thunderstorm']
+};
+function wxDesc(code){ return wxCodeMap[code] ? wxCodeMap[code][0] : 'Unknown'; }
+function wxIcon(code){ return wxCodeMap[code] ? wxCodeMap[code][1] : 'thermometer'; }
+function wxIconTag(code, size){ return `<ion-icon name="${wxIcon(code)}" style="font-size:${size||20}px;"></ion-icon>`; }
+function wxIsClear(code){ return code === 0 || code === 1 || code === 2; }
+
+function renderWeatherWidget(){
+  if(!lastWeatherData) return;
+  const cur = lastWeatherData.current;
+  const daily = lastWeatherData.daily;
+  const widget = document.getElementById('hw-weather');
+  widget.classList.toggle('wx-clear', wxIsClear(cur.weather_code));
+  widget.classList.toggle('wx-cloudy', !wxIsClear(cur.weather_code));
+  document.getElementById('hw-weather-city').textContent = lastWeatherName || 'Weather';
+  document.getElementById('hw-weather-icon').setAttribute('name', wxIcon(cur.weather_code));
+  document.getElementById('hw-weather-desc').textContent = wxDesc(cur.weather_code);
+  document.getElementById('hw-weather-temp').textContent = Math.round(cur.temperature_2m) + '°';
+  document.getElementById('hw-weather-hilo').textContent = `H:${Math.round(daily.temperature_2m_max[0])}° L:${Math.round(daily.temperature_2m_min[0])}°`;
+}
+function renderWeatherWidgetError(){
+  document.getElementById('hw-weather-desc').textContent = 'Unavailable';
+  document.getElementById('hw-weather-temp').textContent = '--°';
+  document.getElementById('hw-weather-hilo').textContent = '';
+}
+
+
+let lastWeatherData = null;
+let lastWeatherName = null;
+
+async function loadWeather(lat, lon, name){
+  window.__wxLoaded = true;
+  const content = document.getElementById('wx-content');
+  if(content) content.innerHTML = '<div class="wx-loading">Loading weather…</div>';
+  try{
+    if(lat===undefined){
+      // default: try geolocation, else fallback to Luxembourg
+      lat = 49.6116; lon = 6.1319; name = 'Luxembourg';
+    }
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=7`;
+    const res = await fetch(url);
+    const data = await res.json();
+    lastWeatherData = data;
+    lastWeatherName = name;
+    if(content) renderWeather(data, name);
+    if(typeof renderWeatherWidget === 'function') renderWeatherWidget();
+  }catch(e){
+    if(content) content.innerHTML = '<div class="wx-loading">Could not load weather. Check network access to api.open-meteo.com.</div>';
+    if(typeof renderWeatherWidgetError === 'function') renderWeatherWidgetError();
+  }
+}
+function renderWeather(data, name){
+  const cur = data.current;
+  const daily = data.daily;
+  const hourly = data.hourly;
+  const nowIdx = hourly.time.findIndex(t => new Date(t) >= new Date());
+  let hourlyHtml = '';
+  for(let i=Math.max(nowIdx,0); i<Math.max(nowIdx,0)+12 && i<hourly.time.length; i++){
+    const t = new Date(hourly.time[i]);
+    const label = i===nowIdx ? 'Now' : t.getHours()+':00';
+    hourlyHtml += `<div class="wx-hour"><span>${label}</span>${wxIconTag(hourly.weather_code[i],20)}<span>${Math.round(hourly.temperature_2m[i])}°</span></div>`;
+  }
+  let dailyHtml = '';
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  daily.time.forEach((d, i)=>{
+    const dt = new Date(d);
+    const label = i===0 ? 'Today' : dayNames[dt.getDay()];
+    dailyHtml += `<div class="wx-day-row"><span class="wx-day-name">${label}</span>${wxIconTag(daily.weather_code[i],20)}<span>${Math.round(daily.temperature_2m_min[i])}° / ${Math.round(daily.temperature_2m_max[i])}°</span></div>`;
+  });
+  document.getElementById('wx-content').innerHTML = `
+    <div class="wx-top">
+      <div class="wx-city">${name}</div>
+      <div class="wx-temp">${Math.round(cur.temperature_2m)}°</div>
+      <div class="wx-desc">${wxDesc(cur.weather_code)}</div>
+      <div class="wx-hilo">H:${Math.round(daily.temperature_2m_max[0])}° L:${Math.round(daily.temperature_2m_min[0])}°</div>
+    </div>
+    <div class="wx-hourly">${hourlyHtml}</div>
+    <div class="wx-daily">${dailyHtml}</div>
+  `;
+}
+async function wxSearch(){
+  const q = document.getElementById('wx-city-input').value.trim();
+  if(!q) return;
+  document.getElementById('wx-content').innerHTML = '<div class="wx-loading">Searching…</div>';
+  try{
+    const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1`);
+    const geo = await geoRes.json();
+    if(!geo.results || !geo.results.length){
+      document.getElementById('wx-content').innerHTML = '<div class="wx-loading">City not found.</div>';
+      return;
+    }
+    const r = geo.results[0];
+    loadWeather(r.latitude, r.longitude, r.name);
+  }catch(e){
+    document.getElementById('wx-content').innerHTML = '<div class="wx-loading">Search failed. Check network access.</div>';
+  }
+}
+
+/* ========================= CALENDAR ========================= */
+let calViewDate = new Date();
+let calSelected = new Date();
+let calEvents = {}; // key: 'YYYY-M-D' -> [{title, time}]
+(function seedEvents(){
+  const today = new Date();
+  const key = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+  calEvents[key] = [{title:'Team sync', time:'10:00 AM'}, {title:'Lunch', time:'12:30 PM'}];
+})();
+const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function calRender(){
+  const y = calViewDate.getFullYear(), m = calViewDate.getMonth();
+  document.getElementById('cal-month-label').textContent = `${monthNames[m].toUpperCase()} ${y}`;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  const firstDay = new Date(y,m,1).getDay();
+  const daysInMonth = new Date(y,m+1,0).getDate();
+  const daysInPrevMonth = new Date(y,m,0).getDate();
+  const today = new Date();
+  for(let i=firstDay-1;i>=0;i--){
+    grid.innerHTML += `<div class="cal-day muted"><span class="num-circle">${daysInPrevMonth-i}</span></div>`;
+  }
+  for(let d=1; d<=daysInMonth; d++){
+    const isToday = d===today.getDate() && m===today.getMonth() && y===today.getFullYear();
+    const isSelected = d===calSelected.getDate() && m===calSelected.getMonth() && y===calSelected.getFullYear();
+    const key = `${y}-${m}-${d}`;
+    const hasEvent = calEvents[key] && calEvents[key].length;
+    let cls = 'cal-day';
+    if(isToday) cls+=' today'; else if(isSelected) cls+=' selected';
+    grid.innerHTML += `<div class="${cls}" onclick="calSelectDay(${d})"><span class="num-circle">${d}</span>${hasEvent?'<span class="dot"></span>':''}</div>`;
+  }
+  const totalCells = firstDay + daysInMonth;
+  const remaining = (7 - (totalCells % 7)) % 7;
+  for(let d=1; d<=remaining; d++){
+    grid.innerHTML += `<div class="cal-day muted"><span class="num-circle">${d}</span></div>`;
+  }
+  calRenderEvents();
+  renderCalendarWidget();
+}
+function renderCalendarWidget(){
+  const weekdayEl = document.getElementById('hw-cal-weekday');
+  const dateEl = document.getElementById('hw-cal-date');
+  const eventsEl = document.getElementById('hw-cal-events');
+  if(!weekdayEl) return;
+  const today = new Date();
+  const weekdayNames = ['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  weekdayEl.textContent = weekdayNames[today.getDay()];
+  dateEl.textContent = today.getDate();
+  const key = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+  const events = (calEvents[key] || []).slice(0, 2);
+  if(!events.length){
+    eventsEl.innerHTML = '<div class="hw-cal-empty">No events today</div>';
+  } else {
+    eventsEl.innerHTML = events.map(ev =>
+      `<div class="hw-cal-event-row"><span class="hw-cal-event-dot"></span><span>${escapeHtml(ev.title)}</span></div>`
+    ).join('');
+  }
+}
+function calSelectDay(d){
+  calSelected = new Date(calViewDate.getFullYear(), calViewDate.getMonth(), d);
+  calRender();
+}
+function calChangeMonth(dir){
+  calViewDate = new Date(calViewDate.getFullYear(), calViewDate.getMonth()+dir, 1);
+  calRender();
+}
+function calRenderEvents(){
+  const y = calSelected.getFullYear(), m = calSelected.getMonth(), d = calSelected.getDate();
+  const key = `${y}-${m}-${d}`;
+  const events = calEvents[key] || [];
+  const dayLabel = `${monthNames[m]} ${d}, ${y}`;
+  let html = `<h3>${dayLabel}</h3>`;
+  if(!events.length){
+    html += `<div style="color:#8e8e93; font-size:14px; padding:10px 0;">No events.</div>`;
+  } else {
+    events.forEach(e=>{
+      html += `<div class="cal-event-row"><span class="cal-event-dot"></span><div><div class="cal-event-title">${escapeHtml(e.title)}</div><div class="cal-event-time">${escapeHtml(e.time)}</div></div></div>`;
+    });
+  }
+  html += `<div class="cal-add-row"><input id="cal-new-title" placeholder="Event title"><input id="cal-new-time" placeholder="Time" style="max-width:90px;"><button onclick="calAddEvent()">Add</button></div>`;
+  document.getElementById('cal-events').innerHTML = html;
+  if(typeof applyKeyboardBlockToAllFields === 'function') applyKeyboardBlockToAllFields();
+}
+function calAddEvent(){
+  const title = document.getElementById('cal-new-title').value.trim();
+  const time = document.getElementById('cal-new-time').value.trim() || 'All day';
+  if(!title) return;
+  const y = calSelected.getFullYear(), m = calSelected.getMonth(), d = calSelected.getDate();
+  const key = `${y}-${m}-${d}`;
+  if(!calEvents[key]) calEvents[key] = [];
+  calEvents[key].push({title, time});
+  calRender();
+  pSave('calendar-events', calEvents);
+}
+calRender();
+(async function loadCalEvents(){
+  const saved = await pLoad('calendar-events');
+  if(saved && typeof saved === 'object'){
+    calEvents = saved;
+    calRender();
+  }
+})();
+
+/* ========================= MUSIC ========================= */
+const playlist = [
+  {title:'Skyline Drift', artist:'The Wavelengths', dur:204, color1:'#ff5e7e', color2:'#ffd60a'},
+  {title:'Circuit Bloom', artist:'Nadia Cross', dur:187, color1:'#5ec9f8', color2:'#7c5cf0'},
+  {title:'Late Departure', artist:'Holloway', dur:231, color1:'#30d158', color2:'#0a84ff'},
+  {title:'Paper Cranes', artist:'The Wavelengths', dur:165, color1:'#ff9f0a', color2:'#ff453a'},
+  {title:'Static Bloom', artist:'Nadia Cross', dur:198, color1:'#af52de', color2:'#5e5ce6'},
+];
+let musicIdx = 0, musicPlaying=false, musicInterval=null, musicElapsed=0;
+function musicFormat(s){ return `${Math.floor(s/60)}:${pad(Math.floor(s%60))}`; }
+function musicLoad(idx){
+  musicIdx = idx;
+  const t = playlist[idx];
+  document.getElementById('music-title').textContent = t.title;
+  document.getElementById('music-artist').textContent = t.artist;
+  document.getElementById('music-dur').textContent = musicFormat(t.dur);
+  document.getElementById('album-art').style.background = `linear-gradient(135deg, ${t.color1}, ${t.color2})`;
+  musicElapsed = 0;
+  updateMusicProgress();
+  renderPlaylist();
+}
+function updateMusicProgress(){
+  const t = playlist[musicIdx];
+  const pct = Math.min(100, (musicElapsed/t.dur)*100);
+  document.getElementById('music-progress-fill').style.width = pct+'%';
+  document.getElementById('music-cur').textContent = musicFormat(musicElapsed);
+}
+function musicToggle(){
+  musicPlaying = !musicPlaying;
+  const icon = document.getElementById('music-play-icon');
+  if(musicPlaying){
+    icon.innerHTML = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+    musicInterval = setInterval(()=>{
+      musicElapsed++;
+      if(musicElapsed >= playlist[musicIdx].dur){ musicNext(); return; }
+      updateMusicProgress();
+    },1000);
+  } else {
+    icon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+    clearInterval(musicInterval);
+  }
+  if(typeof ccSyncMusic === 'function') ccSyncMusic();
+}
+function musicNext(){
+  clearInterval(musicInterval);
+  musicIdx = (musicIdx+1)%playlist.length;
+  musicLoad(musicIdx);
+  if(musicPlaying){ musicPlaying=false; musicToggle(); }
+}
+function musicPrev(){
+  clearInterval(musicInterval);
+  musicIdx = (musicIdx-1+playlist.length)%playlist.length;
+  musicLoad(musicIdx);
+  if(musicPlaying){ musicPlaying=false; musicToggle(); }
+}
+function musicSeek(e){
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX-rect.left)/rect.width;
+  musicElapsed = Math.floor(playlist[musicIdx].dur*pct);
+  updateMusicProgress();
+}
+function musicVol(v){ /* visual only */ }
+function renderPlaylist(){
+  window.__musicRendered = true;
+  const el = document.getElementById('music-playlist');
+  el.innerHTML = playlist.map((t,i)=>`<div class="music-track-row ${i===musicIdx?'playing':''}" onclick="musicLoad(${i})"><span>${t.title} — ${t.artist}</span><span>${musicFormat(t.dur)}</span></div>`).join('');
+}
+musicLoad(0);
+
+/* ========================= SAFARI ========================= */
+function safariGoTo(url){
+  document.getElementById('safari-input').value = url;
+  const wrap = document.getElementById('safari-frame-wrap');
+  wrap.innerHTML = `<iframe src="${url}"></iframe>`;
+}
+function safariGo(){
+  let val = document.getElementById('safari-input').value.trim();
+  if(!val) return;
+  if(!/^https?:\/\//i.test(val)){
+    if(val.includes('.') && !val.includes(' ')){
+      val = 'https://' + val;
+    } else {
+      val = 'https://duckduckgo.com/?q=' + encodeURIComponent(val);
+    }
+  }
+  safariGoTo(val);
+}
+
+/* ========================= SETTINGS ========================= */
+function toggleSetting(el){
+  el.classList.toggle('on');
+  pSaveToggles();
+}
+function toggleDarkMode(el){
+  el.classList.toggle('on'); /* visual demo toggle */
+  pSaveToggles();
+}
+function pSaveToggles(){
+  pSave('settings-toggles', {
+    airplane: document.getElementById('airplane-toggle').classList.contains('on'),
+    darkMode: document.getElementById('darkmode-toggle').classList.contains('on')
+  });
+}
+(async function loadToggles(){
+  const saved = await pLoad('settings-toggles');
+  if(saved){
+    document.getElementById('airplane-toggle').classList.toggle('on', !!saved.airplane);
+    document.getElementById('darkmode-toggle').classList.toggle('on', saved.darkMode !== false);
+  }
+})();
+
+/* ========================= WALLPAPER SETTINGS ========================= */
+const DEFAULT_WALLPAPER_GRADIENT = 'linear-gradient(160deg, #4a6cf7 0%, #7c5cf0 45%, #d94fa8 100%)';
+let currentWallpaperUrl = null; // null = use default local file / gradient fallback
+let currentWallpaperBlur = 0;
+
+function wpApplyWallpaper(urlOrNull, skipSave){
+  currentWallpaperUrl = urlOrNull;
+  const homeLayer = document.getElementById('home-wallpaper-layer');
+  const lockEl = document.getElementById('lock-screen');
+  const preview = document.getElementById('wp-preview-blur');
+  if(urlOrNull){
+    const css = `url('${urlOrNull}')`;
+    homeLayer.style.backgroundImage = css;
+    lockEl.style.backgroundImage = css;
+    preview.style.backgroundImage = css;
+  } else {
+    homeLayer.style.backgroundImage = '';
+    lockEl.style.backgroundImage = '';
+    preview.style.backgroundImage = '';
+  }
+  if(!skipSave) pSaveWallpaper();
+}
+
+function pSaveWallpaper(){
+  pSave('wallpaper', {url: currentWallpaperUrl, blur: currentWallpaperBlur});
+}
+
+function wpApplyUrl(){
+  const val = document.getElementById('wp-url-input').value.trim();
+  if(!val) return;
+  wpApplyWallpaper(val);
+}
+
+function wpApplyFile(e){
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    wpApplyWallpaper(ev.target.result); // data URL, works directly as background-image url()
+  };
+  reader.readAsDataURL(file);
+}
+
+function wpBlurChange(v){
+  currentWallpaperBlur = parseInt(v);
+  document.getElementById('wp-blur-value').textContent = v + 'px';
+  document.getElementById('home-wallpaper-layer').style.filter = `blur(${v}px)`;
+  document.getElementById('wp-preview-blur').style.filter = `blur(${Math.min(v, 20)}px)`;
+  pSaveWallpaper();
+}
+
+function wpReset(){
+  wpApplyWallpaper(null, true);
+  currentWallpaperBlur = 0;
+  document.getElementById('wp-blur-range').value = 0;
+  document.getElementById('wp-blur-value').textContent = '0px';
+  document.getElementById('home-wallpaper-layer').style.filter = '';
+  document.getElementById('wp-preview-blur').style.filter = '';
+  document.getElementById('wp-url-input').value = '';
+  try{ localStorage.removeItem('iphone-emu:wallpaper'); }catch(err){}
+}
+
+function wpSyncPreview(){
+  const preview = document.getElementById('wp-preview-blur');
+  if(currentWallpaperUrl){
+    preview.style.backgroundImage = `url('${currentWallpaperUrl}')`;
+  } else {
+    preview.style.backgroundImage = '';
+  }
+  preview.style.filter = `blur(${Math.min(currentWallpaperBlur, 20)}px)`;
+  document.getElementById('wp-blur-range').value = currentWallpaperBlur;
+  document.getElementById('wp-blur-value').textContent = currentWallpaperBlur + 'px';
+}
+
+(async function loadWallpaper(){
+  const saved = await pLoad('wallpaper');
+  if(saved){
+    if(saved.url) wpApplyWallpaper(saved.url, true);
+    if(saved.blur){
+      currentWallpaperBlur = saved.blur;
+      document.getElementById('home-wallpaper-layer').style.filter = `blur(${saved.blur}px)`;
+    }
+  }
+})();
+
+/* ========================= PHOTOS ========================= */
+let photosList = []; // {id, dataUrl}
+
+function renderPhotosGrid(){
+  const grid = document.getElementById('photos-grid');
+  grid.innerHTML = '';
+  if(!photosList.length){
+    grid.innerHTML = '<div class="photos-empty-hint">No photos yet. Tap + to add some.</div>';
+    return;
+  }
+  photosList.slice().reverse().forEach(photo=>{
+    const thumb = document.createElement('div');
+    thumb.className = 'photo-thumb';
+    thumb.style.backgroundImage = `url('${photo.dataUrl}')`;
+    thumb.addEventListener('click', ()=> openPhotoViewer(photo.id));
+    grid.appendChild(thumb);
+  });
+}
+
+function photosAddFiles(e){
+  const files = Array.from(e.target.files || []);
+  if(!files.length) return;
+  let remaining = files.length;
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      const id = 'photo_' + Date.now() + '_' + Math.floor(Math.random()*10000);
+      const photo = {id, dataUrl: ev.target.result};
+      photosList.push(photo);
+      pSave('photo:' + id, photo);
+      remaining--;
+      if(remaining <= 0) renderPhotosGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+}
+
+let currentPhotoId = null;
+function openPhotoViewer(id){
+  const photo = photosList.find(p => p.id === id);
+  if(!photo) return;
+  currentPhotoId = id;
+  document.getElementById('photo-viewer-img').src = photo.dataUrl;
+  document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('photo-viewer').classList.add('active');
+}
+function closePhotoViewer(){
+  currentPhotoId = null;
+  document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('photos').classList.add('active');
+  currentApp = 'photos';
+}
+function deleteCurrentPhoto(){
+  if(!currentPhotoId) return;
+  photosList = photosList.filter(p => p.id !== currentPhotoId);
+  try{ localStorage.removeItem('iphone-emu:photo:' + currentPhotoId); }catch(err){}
+  closePhotoViewer();
+  renderPhotosGrid();
+}
+
+(async function loadPhotos(){
+  try{
+    const loaded = [];
+    for(let i = 0; i < localStorage.length; i++){
+      const key = localStorage.key(i);
+      if(key && key.indexOf('iphone-emu:photo:') === 0){
+        try{ loaded.push(JSON.parse(localStorage.getItem(key))); }catch(err){}
+      }
+    }
+    if(loaded.length){
+      photosList = loaded;
+      renderPhotosGrid();
+    }
+  }catch(err){ /* storage unavailable, start empty */ }
+})();
+renderPhotosGrid();
+
+/* ========================= CAMERA ========================= */
+let cameraStream = null;
+let cameraFacingMode = 'user'; // 'user' (front) or 'environment' (back)
+let cameraFlashOn = false;
+
+async function cameraStart(){
+  const msg = document.getElementById('camera-permission-msg');
+  const retryBtn = document.getElementById('camera-retry-btn');
+  const permText = document.getElementById('camera-permission-text');
+
+  cameraUpdateLastThumb();
+
+  // Live camera access isn't available in this environment, so the viewfinder
+  // shows an explanatory message in place of a real feed. The rest of the
+  // camera UI (shutter, flip, flash) stays visible for the full look and feel.
+  msg.classList.add('visible');
+  permText.textContent = "Camera preview isn't available here.";
+  retryBtn.style.display = 'none';
+}
+
+function cameraStop(){
+  const video = document.getElementById('camera-video');
+  if(cameraStream){
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+  if(video) video.srcObject = null;
+}
+
+function cameraFlip(){
+  cameraFacingMode = cameraFacingMode === 'user' ? 'environment' : 'user';
+  cameraStart();
+}
+
+function cameraToggleFlash(){
+  cameraFlashOn = !cameraFlashOn;
+  const icon = document.getElementById('camera-flash-icon');
+  icon.setAttribute('name', cameraFlashOn ? 'flash' : 'flash-off');
+  icon.style.color = cameraFlashOn ? '#ffd60a' : '#fff';
+}
+
+function cameraCapture(){
+  // No real video feed is available in this environment, so the shutter can't
+  // capture an actual frame. Flash the shutter for feedback and let the person know.
+  const flash = document.getElementById('camera-flash-overlay');
+  flash.classList.remove('flashing');
+  void flash.offsetWidth; // restart the animation
+  flash.classList.add('flashing');
+
+  const permText = document.getElementById('camera-permission-text');
+  const msg = document.getElementById('camera-permission-msg');
+  msg.classList.add('visible');
+  permText.textContent = "Camera preview isn't available here, so no photo was taken.";
+}
+
+function cameraUpdateLastThumb(){
+  const thumb = document.getElementById('camera-last-thumb');
+  if(!thumb) return;
+  if(photosList.length){
+    thumb.style.backgroundImage = `url('${photosList[photosList.length-1].dataUrl}')`;
+  } else {
+    thumb.style.backgroundImage = '';
+  }
+}
+
+function closeCameraApp(){
+  cameraStop();
+  goHome();
+}
+
+/* ========================= REMINDERS ========================= */
+const REM_LIST_COLORS = ['#0a84ff','#30d158','#ff9f0a','#ff453a','#af52de','#5e5ce6','#ff375f'];
+let remLists = [
+  {id:'list_default', name:'Reminders', color:'#0a84ff', items:[
+    {id:'i1', text:'Welcome to Reminders', done:false, dueToday:true},
+    {id:'i2', text:'Tap + Add List to make your own', done:false, dueToday:false},
+  ]},
+];
+let currentRemListId = null;
+
+function remCountOpen(list){ return list.items.filter(i=>!i.done).length; }
+
+function remTodayItems(){
+  const out = [];
+  remLists.forEach(list=> list.items.forEach(item=>{
+    if(item.dueToday && !item.done) out.push({item, list});
+  }));
+  return out;
+}
+function remScheduledItems(){
+  const out = [];
+  remLists.forEach(list=> list.items.forEach(item=>{
+    if(item.dueToday) out.push({item, list});
+  }));
+  return out;
+}
+
+function renderRemindersHome(){
+  const grid = document.getElementById('rem-lists-grid');
+  const todayCount = remTodayItems().length;
+  const schedCount = remScheduledItems().length;
+  grid.innerHTML = `
+    <div class="rem-smart-card" onclick="openSmartList('today')">
+      <div class="top-row"><ion-icon name="today" style="color:#0a84ff;"></ion-icon></div>
+      <div><div class="count">${todayCount}</div><div class="label">Today</div></div>
+    </div>
+    <div class="rem-smart-card" onclick="openSmartList('scheduled')">
+      <div class="top-row"><ion-icon name="calendar" style="color:#ff453a;"></ion-icon></div>
+      <div><div class="count">${schedCount}</div><div class="label">Scheduled</div></div>
+    </div>
+  `;
+  const myLists = document.getElementById('rem-mylists');
+  myLists.innerHTML = '';
+  remLists.forEach(list=>{
+    const row = document.createElement('div');
+    row.className = 'rem-list-row';
+    row.innerHTML = `<div class="rem-list-dot" style="background:${list.color};"><ion-icon name="list"></ion-icon></div><div class="rem-list-name">${escapeHtml(list.name)}</div><div class="rem-list-count">${remCountOpen(list)}</div>`;
+    row.addEventListener('click', ()=> openReminderList(list.id));
+    myLists.appendChild(row);
+  });
+}
+
+function remPromptNewList(){
+  const name = prompt('New list name:');
+  if(!name || !name.trim()) return;
+  const color = REM_LIST_COLORS[remLists.length % REM_LIST_COLORS.length];
+  const list = {id:'list_'+Date.now(), name:name.trim(), color, items:[]};
+  remLists.push(list);
+  renderRemindersHome();
+  pSaveReminders();
+}
+
+let viewingSmart = null; // 'today' | 'scheduled' | null
+function openSmartList(kind){
+  viewingSmart = kind;
+  currentRemListId = null;
+  document.getElementById('rem-detail-title').textContent = kind === 'today' ? 'Today' : 'Scheduled';
+  renderReminderItems();
+  document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('reminder-detail').classList.add('active');
+}
+function openReminderList(id){
+  viewingSmart = null;
+  currentRemListId = id;
+  const list = remLists.find(l=>l.id===id);
+  document.getElementById('rem-detail-title').textContent = list ? list.name : 'List';
+  renderReminderItems();
+  document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('reminder-detail').classList.add('active');
+}
+function closeReminderDetail(){
+  document.querySelectorAll('.app-screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('reminders').classList.add('active');
+  currentApp = 'reminders';
+  renderRemindersHome();
+}
+
+function renderReminderItems(){
+  const el = document.getElementById('rem-items-list');
+  el.innerHTML = '';
+  let entries;
+  if(viewingSmart === 'today') entries = remTodayItems();
+  else if(viewingSmart === 'scheduled') entries = remScheduledItems();
+  else {
+    const list = remLists.find(l=>l.id===currentRemListId);
+    entries = list ? list.items.map(item=>({item, list})) : [];
+  }
+  if(!entries.length){
+    el.innerHTML = '<div style="color:#8e8e93; font-size:14px; padding:16px 4px;">Nothing here.</div>';
+    return;
+  }
+  entries.forEach(({item, list})=>{
+    const row = document.createElement('div');
+    row.className = 'rem-item-row';
+    row.innerHTML = `<div class="rem-check ${item.done?'done':''}">${item.done?'<ion-icon name="checkmark"></ion-icon>':''}</div><div class="rem-item-text ${item.done?'done':''}">${escapeHtml(item.text)}</div>`;
+    row.querySelector('.rem-check').addEventListener('click', ()=>{
+      item.done = !item.done;
+      renderReminderItems();
+      pSaveReminders();
+    });
+    el.appendChild(row);
+  });
+}
+
+function remAddItem(){
+  const input = document.getElementById('rem-new-item-input');
+  const text = input.value.trim();
+  if(!text) return;
+  let list = currentRemListId ? remLists.find(l=>l.id===currentRemListId) : remLists[0];
+  if(!list) return;
+  list.items.push({id:'i_'+Date.now(), text, done:false, dueToday: viewingSmart==='today'});
+  input.value = '';
+  renderReminderItems();
+  pSaveReminders();
+}
+
+function pSaveReminders(){
+  pSave('reminders-lists', remLists);
+}
+(async function loadReminders(){
+  const saved = await pLoad('reminders-lists');
+  if(saved && Array.isArray(saved) && saved.length){
+    remLists = saved;
+  }
+  renderRemindersHome();
+})();
+
+/* ========================= DYNAMIC ISLAND ========================= */
+let diExpanded = false;
+let diCurrentActivity = null; // 'timer' | 'music' | null
+let diPromoted = null; // 'timer' | 'music' | null — manually promoted to primary via long-press on the satellite
+
+function diGetActivities(){
+  const timerActive = typeof timerRunning !== 'undefined' && timerRunning;
+  const musicActive = typeof musicPlaying !== 'undefined' && musicPlaying;
+  if(musicActive && timerActive){
+    // Default: music owns the main pill, timer is the satellite — unless the person
+    // has long-pressed the satellite to manually promote the timer instead.
+    if(diPromoted === 'timer') return {primary:'timer', secondary:'music'};
+    return {primary:'music', secondary:'timer'};
+  }
+  if(musicActive) return {primary:'music', secondary:null};
+  if(timerActive) return {primary:'timer', secondary:null};
+  diPromoted = null; // reset once neither/only-one is active, so it doesn't stick around stale
+  return {primary:null, secondary:null};
+}
+
+function diTimerFormat(sec){
+  const m = Math.floor(Math.max(sec,0)/60), s = Math.max(sec,0)%60;
+  return `${m}:${s.toString().padStart(2,'0')}`;
+}
+function diMusicFormat(s){
+  return `${Math.floor(s/60)}:${Math.floor(s%60).toString().padStart(2,'0')}`;
+}
+
+let diPrevPrimary = null;
+let diPrevSecondary = null;
+
+function diRender(){
+  const island = document.getElementById('dynamic-island');
+  const wrap = document.getElementById('di-wrap');
+  const satellite = document.getElementById('di-satellite');
+  const { primary, secondary } = diGetActivities();
+  diCurrentActivity = primary;
+
+  if(primary !== diPrevPrimary || secondary !== diPrevSecondary){
+    diPrevPrimary = primary;
+    diPrevSecondary = secondary;
+  }
+
+  if(!primary){
+    island.classList.remove('compact', 'expanded');
+    satellite.classList.remove('visible');
+    wrap.classList.remove('has-expanded');
+    diExpanded = false;
+    return;
+  }
+
+  island.classList.toggle('expanded', diExpanded);
+  island.classList.toggle('compact', !diExpanded);
+  wrap.classList.toggle('has-expanded', diExpanded);
+  // The satellite bubble hides while the main island is expanded, matching real iOS
+  satellite.classList.toggle('visible', !!secondary && !diExpanded);
+
+  const icon = document.getElementById('di-icon');
+  const compactText = document.getElementById('di-compact-text');
+  const eq = document.getElementById('di-eq');
+  const expTitle = document.getElementById('di-expanded-title');
+  const expSub = document.getElementById('di-expanded-sub');
+  const expControls = document.getElementById('di-expanded-controls');
+  const expFill = document.getElementById('di-expanded-progress-fill');
+
+  if(primary === 'timer'){
+    icon.innerHTML = '<ion-icon name="timer-outline" style="color:#ff9f0a;"></ion-icon>';
+    eq.style.display = 'none';
+    compactText.style.display = '';
+    compactText.textContent = diTimerFormat(timerRemaining);
+    expTitle.textContent = 'Timer';
+    expSub.textContent = diTimerFormat(timerRemaining) + ' remaining';
+    const pct = timerTotal > 0 ? Math.max(0, Math.min(100, (1 - timerRemaining/timerTotal) * 100)) : 0;
+    expFill.style.width = pct + '%';
+    expControls.innerHTML = '<ion-icon name="pause"></ion-icon>';
+    expControls.querySelector('ion-icon').onclick = function(e){ e.stopPropagation(); timerToggle(); diRender(); };
+  } else if(primary === 'music'){
+    const t = playlist[musicIdx];
+    icon.innerHTML = '<ion-icon name="musical-notes" style="color:#fff;"></ion-icon>';
+    icon.style.background = `linear-gradient(135deg, ${t.color1}, ${t.color2})`;
+    compactText.style.display = 'none';
+    eq.style.display = '';
+    expTitle.textContent = t.title;
+    expSub.textContent = t.artist;
+    const pct = t.dur > 0 ? Math.min(100, (musicElapsed/t.dur)*100) : 0;
+    expFill.style.width = pct + '%';
+    expControls.innerHTML = '<ion-icon name="play-skip-back"></ion-icon><ion-icon name="pause"></ion-icon>';
+    const icons = expControls.querySelectorAll('ion-icon');
+    icons[0].onclick = function(e){ e.stopPropagation(); musicPrev(); diRender(); };
+    icons[1].onclick = function(e){ e.stopPropagation(); musicToggle(); diRender(); };
+  }
+
+  // Satellite bubble — can now represent either activity depending on which one is secondary
+  const satIcon = document.getElementById('di-satellite-icon');
+  const ring = document.getElementById('di-satellite-ring');
+  if(secondary === 'timer'){
+    satIcon.setAttribute('name', 'timer-outline');
+    satIcon.style.color = '#ff9f0a';
+    const pct = timerTotal > 0 ? Math.max(0, Math.min(100, (1 - timerRemaining/timerTotal) * 100)) : 0;
+    ring.style.setProperty('--di-sat-pct', pct + '%');
+    ring.style.display = '';
+  } else if(secondary === 'music'){
+    satIcon.setAttribute('name', 'musical-notes');
+    satIcon.style.color = '#fff';
+    ring.style.display = 'none';
+  }
+}
+
+// Poll every second so the island stays in sync with timer/music state without
+// needing to hook into every mutation point in those separate systems.
+setInterval(diRender, 1000);
+diRender();
+
+/* Tap = jump to the relevant app (or collapse if expanded). Long-press = expand. */
+(function(){
+  const island = document.getElementById('dynamic-island');
+  let pressTimer = null;
+  let pressStartTime = 0;
+  let longPressFired = false;
+  const LONG_PRESS_MS = 420;
+
+  function onDown(e){
+    if(!diCurrentActivity) return;
+    if(e.target.closest && e.target.closest('.di-expanded-controls')) return; // let control buttons handle their own taps
+    longPressFired = false;
+    pressStartTime = Date.now();
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(()=>{
+      longPressFired = true;
+      diExpanded = true;
+      diRender();
+    }, LONG_PRESS_MS);
+  }
+  function onUp(e){
+    if(e.target.closest && e.target.closest('.di-expanded-controls')) { clearTimeout(pressTimer); return; }
+    clearTimeout(pressTimer);
+    if(!diCurrentActivity) return;
+    const heldMs = Date.now() - pressStartTime;
+    if(longPressFired && heldMs >= LONG_PRESS_MS){
+      // This release just finished the long-press that expanded it; don't also treat it as a tap.
+      longPressFired = false;
+      return;
+    }
+    longPressFired = false;
+    if(diExpanded){
+      diExpanded = false;
+      diRender();
+    } else {
+      openApp(diCurrentActivity === 'timer' ? 'clock' : 'music');
+    }
+  }
+  island.addEventListener('touchstart', onDown, {passive:true});
+  island.addEventListener('touchend', onUp);
+  island.addEventListener('mousedown', onDown);
+  island.addEventListener('mouseup', onUp);
+})();
+
+/* Satellite bubble: tap = jump to its app, long-press = promote it to the main pill */
+(function(){
+  const satellite = document.getElementById('di-satellite');
+  let pressTimer = null;
+  let pressStartTime = 0;
+  let longPressFired = false;
+  const LONG_PRESS_MS = 420;
+
+  function currentSecondary(){
+    return diGetActivities().secondary;
+  }
+
+  function onDown(e){
+    if(!satellite.classList.contains('visible')) return;
+    longPressFired = false;
+    pressStartTime = Date.now();
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(()=>{
+      longPressFired = true;
+      const sec = currentSecondary();
+      if(sec){ diPromoted = sec; diRender(); }
+    }, LONG_PRESS_MS);
+  }
+  function onUp(e){
+    clearTimeout(pressTimer);
+    if(!satellite.classList.contains('visible')) return;
+    const heldMs = Date.now() - pressStartTime;
+    if(longPressFired && heldMs >= LONG_PRESS_MS){
+      longPressFired = false;
+      return; // this release just finished the promotion long-press
+    }
+    longPressFired = false;
+    const sec = currentSecondary();
+    if(sec) openApp(sec === 'timer' ? 'clock' : 'music');
+  }
+  satellite.addEventListener('touchstart', onDown, {passive:true});
+  satellite.addEventListener('touchend', onUp);
+  satellite.addEventListener('mousedown', onDown);
+  satellite.addEventListener('mouseup', onUp);
+})();
+
+/* ========================= HOME SCREEN WIDGETS: initial load ========================= */
+loadWeather(); // populates the Weather home-screen widget (and the Weather app once opened)
+if(typeof renderCalendarWidget === 'function') renderCalendarWidget();
+
+/* ========================= FULL-SCREEN VIEWPORT FIT ========================= */
+// The whole UI is designed at a fixed 390x844 reference size. On a real phone we
+// scale that reference frame up or down (and re-center it) to fill the actual
+// viewport, so it looks correct on any device instead of only at exactly 390x844.
+function fitDeviceToViewport(){
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const scale = Math.max(vw / 390, vh / 844); // cover the viewport, like real full-screen apps
+  const el = document.querySelector('.device-scale');
+  if(!el) return;
+  el.style.transform = `translateX(-50%) scale(${scale})`;
+  el.style.top = ((vh - 844 * scale) / 2) + 'px';
+}
+fitDeviceToViewport();
+window.addEventListener('resize', fitDeviceToViewport);
+window.addEventListener('orientationchange', fitDeviceToViewport);
+
+
+
+</script>
+</body>
+</html>
